@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+dist/
+build/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Results (large files tracked separately)
+results/
+
+# Raw PDFs are large — track via Git LFS or keep local-only
+# Uncomment the next line if raw/ should not be pushed:
+# raw/papers/*.pdf
