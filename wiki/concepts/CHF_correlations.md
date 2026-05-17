@@ -38,4 +38,4 @@ CHF defines the hard safety constraint in the cold plate optimization: operating
 
 - [[HallMudawar2000_subcooled_CHF]]
 - [[mudawar_group]]
-- [[QuMudawar2003_microchannel_heat_sink]] (pending ingest)
+- [[QuMudawar2003_microchannel_heat_sink]]

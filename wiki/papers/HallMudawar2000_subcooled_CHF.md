@@ -86,13 +86,9 @@ The inlet correlation parametric range was chosen to contain ~85% of the subcool
 - Figs. 3(a–i): Error distribution by parameter bin — shows where correlation accuracy degrades.
 - Fig. 5: Predicted vs. measured CHF scatter plot and error histogram.
 
-## Relevance to This Project
-
-This paper provides the primary CHF correlation for computing critical heat flux safety margins in the cold plate optimization. The CHF constraint (operating heat flux ≤ q″_CHF / 1.5) is one of the four optimization objectives. The inlet-conditions correlation is the recommended tool for this: 5 constants, single equation, physically-grounded functional form, and accuracy below experimental uncertainty.
-
-The comparison to the Groeneveld look-up table (MAE 37.5%, 30% of data unpredictable) provides direct justification for using a correlation-based approach rather than a look-up table in our framework.
-
 ## Applicability to This Project
+
+This paper provides the primary CHF correlation for computing critical heat flux safety margins in the cold plate optimization. The CHF constraint (operating heat flux ≤ q″_CHF / 1.5) is one of the four optimization objectives. The inlet-conditions correlation is the recommended tool for this: 5 constants, single equation, physically-grounded functional form, and accuracy below experimental uncertainty. The comparison to the Groeneveld look-up table (MAE 37.5%, 30% of data unpredictable) provides direct justification for using a correlation-based approach rather than a look-up table in our framework.
 
 **Geometry mismatch — round tube vs. rectangular microchannel.** All data and correlations in this paper are for uniformly heated round tubes. Our cold plate uses rectangular microchannels (aspect ratios 0.5–5, D_h = 0.5–3 mm). The standard approach is to substitute hydraulic diameter D_h = 4A/P_w for the tube diameter D in the correlation. This is common practice but introduces additional uncertainty not quantified in the paper's error bands. The degree of extra error depends on aspect ratio and confinement effects.
 
@@ -106,8 +102,7 @@ The comparison to the Groeneveld look-up table (MAE 37.5%, 30% of data unpredict
 
 - [[CHF_correlations]]
 - [[mudawar_group]]
-- [[QuMudawar2003_microchannel_heat_sink]] (pending ingest)
-
+- [[QuMudawar2003_microchannel_heat_sink]]
 ## Notes
 
 - The outlet-conditions correlation degrades for near-saturated conditions (x_o > −0.05), suggesting a possible transition in the CHF trigger mechanism near saturation [Hall & Mudawar 2000].

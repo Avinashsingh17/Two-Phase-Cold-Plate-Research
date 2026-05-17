@@ -33,16 +33,13 @@ tags: []
 
 - {{Describe figures, tables, or datasets that can serve as benchmarks}}
 
-## Relevance to This Project
-
-{{How does this paper connect to the cold plate optimization goals?}}
-
 ## Applicability to This Project
 
-{{Explicit assessment of how directly this paper's data, correlations, or models
-can be applied to the cold plate geometry, fluid, and operating conditions in
-this project. Flag geometry mismatches (e.g., round tube vs. rectangular channel),
-fluid mismatches, or parametric range gaps. Note standard workarounds (e.g.,
+{{How does this paper connect to the cold plate optimization goals? Then:
+explicit assessment of how directly this paper's data, correlations, or models
+can be applied to the cold plate geometry, fluid, and operating conditions.
+Flag geometry mismatches (e.g., round tube vs. rectangular channel), fluid
+mismatches, or parametric range gaps. Note standard workarounds (e.g.,
 hydraulic diameter substitution) and the extra uncertainty they introduce.
 Cross-reference papers that fill the gaps.}}
 

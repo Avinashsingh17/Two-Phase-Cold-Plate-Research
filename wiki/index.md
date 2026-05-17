@@ -25,4 +25,4 @@ _No comparison pages yet._
 
 ## Synthesis
 
-_No synthesis pages yet._
+- [[schema_evolution]] — Append-only log of structural decisions about wiki schema (what changed, when, why)
