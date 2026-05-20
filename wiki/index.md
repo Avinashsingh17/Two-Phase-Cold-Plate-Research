@@ -8,6 +8,7 @@ title: Wiki Index
 
 - [[HallMudawar2000_subcooled_CHF]] — Subcooled CHF correlations for water in round tubes; inlet-conditions correlation (MAE 10.3%, 5 constants)  [1 source]
 - [[KrepperRzehak2011_DEBORA]] — Euler/Euler + RPI wall boiling validated against DEBORA (R12); complete closure catalog and setup recipe  [1 source]
+- [[QuMudawar2003_microchannel_boiling_I]] — Saturated flow boiling HTC in 231×713 µm water microchannel heat sink; 11 correlations fail on trend; Stage 2 validation benchmark  [1 source]
 
 ## Concepts
 
@@ -17,7 +18,7 @@ title: Wiki Index
 
 ## Entities
 
-- [[mudawar_group]] — Purdue PUREES Lab (Issam Mudawar); CHF database, boiling, microchannels  [1 source]
+- [[mudawar_group]] — Purdue PUREES Lab (Issam Mudawar); CHF database, boiling, microchannels  [2 sources]
 
 ## Comparisons
 
@@ -26,3 +27,8 @@ _No comparison pages yet._
 ## Synthesis
 
 - [[schema_evolution]] — Append-only log of structural decisions about wiki schema (what changed, when, why)
+- [[motivation_for_CFD_approach]] — Why correlations are insufficient for water microchannel design; Qu & Mudawar 2003 evidence  [1 source]
+
+## Communication
+
+- [[plain_language_explanation]] — Canonical long-form physics-first explanation of the project for non-specialists

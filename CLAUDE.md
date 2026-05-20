@@ -24,6 +24,7 @@ two-phase-cold-plate/
 │   ├── entities/              # authors, labs, hardware systems, fluids
 │   ├── comparisons/           # head-to-head tables and analysis pages
 │   ├── synthesis/             # evolving thesis, Pareto landscape, open questions
+│   ├── communication/         # audience-facing artifacts (explanations, pitches)
 │   └── templates/             # page templates — load on demand, do not preload
 └── src/ benchmarks/ tests/ …  # code (see PROJECT_CONTEXT.md)
 ```
@@ -120,6 +121,14 @@ a new page — do not keep templates in memory between tasks.
 - `templates/entity.md` — author, lab, hardware system, or fluid
 - `templates/comparison.md` — head-to-head of two or more sources/models
 - `templates/synthesis.md` — evolving thesis or open-questions page
+
+## Communication artifacts
+
+`wiki/communication/` holds audience-facing documents (plain-language
+explanations, elevator pitches, poster abstracts) that derive from the
+research synthesis but are distinct from it. These are living documents:
+when a new ingest materially changes the project narrative, flag the
+change and offer to update the affected communication artifacts.
 
 ---
 

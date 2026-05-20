@@ -20,7 +20,8 @@ _This section will grow as additional Mudawar group papers are ingested._
 ## Associated Publications
 
 - [[HallMudawar2000_subcooled_CHF]]
-- [[QuMudawar2003_microchannel_heat_sink]]
+- [[QuMudawar2003_microchannel_boiling_I]]
+
 ## Cross-References
 
 - [[CHF_correlations]]
