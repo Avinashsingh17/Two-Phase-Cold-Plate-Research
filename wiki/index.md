@@ -28,6 +28,7 @@ _No comparison pages yet._
 
 - [[schema_evolution]] — Append-only log of structural decisions about wiki schema (what changed, when, why)
 - [[motivation_for_CFD_approach]] — Why correlations are insufficient for water microchannel design; Qu & Mudawar 2003 evidence  [1 source]
+- [[open_questions]] — Consolidated tracker of all open TODOs and unresolved questions across the wiki  [3 papers]
 
 ## Communication
 

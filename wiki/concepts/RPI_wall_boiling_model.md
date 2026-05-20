@@ -64,3 +64,4 @@ For implementation details and CFX-vs-Fluent translation, see [[RPI_model_implem
 - [[KrepperRzehak2011_DEBORA]]
 - [[RPI_model_implementation]]
 - [[CHF_correlations]]
+- [[QuMudawar2003_microchannel_boiling_I]]

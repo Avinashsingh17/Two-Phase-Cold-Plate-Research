@@ -2,7 +2,7 @@
 title: "Qu & Mudawar 2003 — Flow Boiling Heat Transfer in Micro-Channel Heat Sinks (Part I)"
 type: paper
 source: "W. Qu, I. Mudawar, 'Flow boiling heat transfer in two-phase micro-channel heat sinks — I. Experimental investigation and assessment of correlation methods,' International Journal of Heat and Mass Transfer, vol. 46, pp. 2755–2771, 2003."
-date_ingested: 2026-05-19
+date_ingested: 2026-05-20
 tags: [microchannel, flow-boiling, water, HTC, annular-flow, correlation-assessment, validation, experimental]
 ---
 

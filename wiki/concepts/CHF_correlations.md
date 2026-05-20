@@ -30,7 +30,7 @@ CHF defines the hard safety constraint in the cold plate optimization: operating
 
 ## Open Questions
 
-- How much additional uncertainty does the hydraulic-diameter substitution (D → D_h) introduce for rectangular microchannels? Needs cross-validation against rectangular channel data (see [[QuMudawar2003_microchannel_heat_sink]]).
+- How much additional uncertainty does the hydraulic-diameter substitution (D → D_h) introduce for rectangular microchannels? Needs cross-validation against rectangular channel data (see [[QuMudawar2003_microchannel_boiling_I]]).
 - Does the correlation remain accurate for dielectric fluids (HFE-7100, Novec 649)? Hall & Mudawar is water-only; a separate CHF correlation or scaling law will be needed for Phase 2.
 - Behavior near saturation (x_o > −0.05) is less reliable — relevant if cold plate channels approach saturated exit conditions.
 
@@ -38,4 +38,4 @@ CHF defines the hard safety constraint in the cold plate optimization: operating
 
 - [[HallMudawar2000_subcooled_CHF]]
 - [[mudawar_group]]
-- [[QuMudawar2003_microchannel_heat_sink]]
+- [[QuMudawar2003_microchannel_boiling_I]]

@@ -44,3 +44,15 @@ Added sensitivity/criticality column to the setup-recipe table convention for CF
 **What:** Created `wiki/communication/` for audience-facing artifacts (plain-language explanations, elevator pitches, poster abstracts). First file: `plain_language_explanation.md`. Updated CLAUDE.md directory structure and added a "Communication artifacts" section describing purpose and maintenance expectations.
 
 **Why:** Communication artifacts derive from synthesis but serve a different audience and purpose. They are living documents that should be flagged for update when new ingests materially change the project narrative. Keeping them in `wiki/` (rather than a separate top-level directory) maintains the single-knowledge-base principle.
+
+## [2026-05-20] Entity pages track strict authorship only
+
+**What:** After 3 ingests + first lint pass — entity pages track strict authorship only, not citation chains. Future ingests should only link entity pages from papers authored by that entity. Removed `[[mudawar_group]]` from Krepper & Rzehak 2011 cross-references (Krepper is Helmholtz-Zentrum, not Mudawar group). Paper-to-paper citation links (e.g., Krepper → Hall & Mudawar 2000) remain on the paper page and are the correct mechanism for tracking citation context.
+
+**Why:** Conflating authorship and citation chains in entity pages muddies what entity pages mean. If every paper that *cites* a Mudawar paper links to `[[mudawar_group]]`, the entity page becomes a citation index rather than an authorship registry. Citation chains are already captured by paper-to-paper cross-references.
+
+## [2026-05-20] Added wiki/synthesis/open_questions.md
+
+**What:** Created a consolidated open-questions tracker that mirrors all `<!-- TODO -->` items and unresolved questions from across the wiki. Inline TODOs stay on source pages (close to context); the tracker provides a single view for prioritization. Updated during each lint pass.
+
+**Why:** With 3 papers ingested, open questions are scattered across 5+ pages. A consolidated view makes it easier to decide which gaps to fill next and to track resolution over time.

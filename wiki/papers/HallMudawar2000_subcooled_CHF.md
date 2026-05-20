@@ -94,7 +94,7 @@ This paper provides the primary CHF correlation for computing critical heat flux
 
 **Partially mitigated by parametric range.** The correlation covers D down to 0.25 mm and L/D down to 2, which overlaps well with microchannel dimensions. The small-diameter, high-mass-velocity regime (where the correlation was developed) aligns with cold plate operating conditions.
 
-**Rectangular channel validation needed.** The hydraulic-diameter substitution should be checked against rectangular-channel CHF data. [[QuMudawar2003_microchannel_heat_sink]] provides saturated boiling data in 231 µm × 713 µm rectangular channels that can serve as a cross-check. <!-- TODO: verify --> Whether Hall & Mudawar inlet correlation with D_h substitution predicts Qu & Mudawar CHF data within acceptable error has not yet been assessed.
+**Rectangular channel validation needed.** The hydraulic-diameter substitution should be checked against rectangular-channel CHF data. [[QuMudawar2003_microchannel_boiling_I]] provides saturated boiling data in 231 µm × 713 µm rectangular channels that can serve as a cross-check. <!-- TODO: verify --> Whether Hall & Mudawar inlet correlation with D_h substitution predicts Qu & Mudawar CHF data within acceptable error has not yet been assessed.
 
 **Fluid match.** Water — matches our Phase 1 validation fluid. Not applicable to dielectric fluids (Phase 2) without separate validation.
 
@@ -102,7 +102,8 @@ This paper provides the primary CHF correlation for computing critical heat flux
 
 - [[CHF_correlations]]
 - [[mudawar_group]]
-- [[QuMudawar2003_microchannel_heat_sink]]
+- [[QuMudawar2003_microchannel_boiling_I]]
+
 ## Notes
 
 - The outlet-conditions correlation degrades for near-saturated conditions (x_o > −0.05), suggesting a possible transition in the CHF trigger mechanism near saturation [Hall & Mudawar 2000].
