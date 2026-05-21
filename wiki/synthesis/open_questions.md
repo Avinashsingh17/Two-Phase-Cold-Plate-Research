@@ -24,11 +24,12 @@ Consolidated list of all open `<!-- TODO -->` items and unresolved questions acr
 | # | Source page | Question | Context |
 |---|-----------|----------|---------|
 | 4 | [[motivation_for_CFD_approach]] | Does the Qu & Mudawar Part II annular flow model perform better than the 11 empirical correlations? | If yes, useful as 1D analytical baseline before CFD. Requires ingesting B3 |
-| 5 | [[motivation_for_CFD_approach]] | Are newer correlations (e.g., Kim & Mudawar 2013) any better at capturing the decreasing-h_tp-with-quality trend? | Kim & Mudawar 2013 is on the priority ingest list |
+| 5 | [[motivation_for_CFD_approach]] | Are newer correlations (e.g., Kim & Mudawar 2013) any better at capturing the decreasing-h_tp-with-quality trend? | **Resolved (2026-05-20):** No. Kim & Mudawar 2013 still predicts wrong trend for water microchannels. See [[KimMudawar2013_universal_boiling_II]] |
 | 6 | [[CHF_correlations]] | How much additional uncertainty does D → D_h substitution introduce for rectangular microchannels? | Cross-validation against rectangular channel CHF data needed |
 | 7 | [[CHF_correlations]] | Does the Hall & Mudawar correlation remain accurate for dielectric fluids? | Water-only correlation; Phase 2 will need a separate CHF tool |
 | 8 | [[RPI_wall_boiling_model]] | Can the monodispersed RPI model produce reliable results for microchannel geometries with bubble confinement? | Stage 2 validation (Qu & Mudawar) will answer this directly |
 | 9 | [[RPI_wall_boiling_model]] | What N_ref value is appropriate for water at ~1 atm on a copper surface? | No direct data in current corpus. May need literature search or calibration during Stage 2 |
+| 10 | [[KimMudawar2013_universal_boiling_II]] | Does our cold plate design envelope cross into saturated operation (x_e > 0) where dryout incipience quality x_di becomes the binding thermal constraint instead of subcooled CHF? | x_di (saturated annular film dryout) and subcooled CHF (Hall & Mudawar) are different physical events in different regimes. Need to evaluate which constraint binds for our operating conditions. If x_e > 0 at channel exit, source Kim & Mudawar 2013 Part I for x_di correlation |
 
 ---
 

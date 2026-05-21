@@ -14,6 +14,7 @@ Professor Issam Mudawar leads the Purdue University Boiling and Two-Phase Flow L
 - Compiled the PU-BTPFL CHF database (5544 subcooled data points) — the largest open subcooled CHF database — and developed the Hall & Mudawar inlet-conditions correlation (MAE 10.3%), the most accurate subcooled CHF correlation for water in round tubes [Hall & Mudawar 2000].
 - Extensive experimental campaigns on flow boiling in microchannels and mini-channels, including rectangular channels relevant to cold plate geometries [Qu & Mudawar 2003, and others].
 - Systematic parametric studies on ultra-high CHF at high mass velocities and small diameters [Mudawar & Bowers 1999].
+- Consolidated the largest mini/micro-channel flow boiling database (10,805 pre-dryout data points, 18 fluids, D_h = 0.19–6.5 mm) and developed a universal HTC correlation (MAE 20.3%) via nucleate + convective boiling superposition [Kim & Mudawar 2013].
 
 _This section will grow as additional Mudawar group papers are ingested._
 
@@ -21,6 +22,7 @@ _This section will grow as additional Mudawar group papers are ingested._
 
 - [[HallMudawar2000_subcooled_CHF]]
 - [[QuMudawar2003_microchannel_boiling_I]]
+- [[KimMudawar2013_universal_boiling_II]]
 
 ## Cross-References
 
