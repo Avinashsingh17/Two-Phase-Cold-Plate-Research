@@ -1,13 +1,13 @@
 ---
 title: "Plain-Language Explanation of the Project"
 type: communication
-last_updated: 2026-05-20
+last_updated: 2026-05-22
 tags: [communication, explanation, audience-facing, physics-first]
 ---
 
 # Plain-Language Explanation of the Project
 
-*Last updated: after 3 ingests (Hall & Mudawar 2000, Krepper & Rzehak 2011, Qu & Mudawar 2003)*
+*Last updated: after 4 ingests (Hall & Mudawar 2000, Krepper & Rzehak 2011, Qu & Mudawar 2003, Kim & Mudawar 2013)*
 
 *Purpose: This is the canonical long-form physics-first explanation of the project. Used for explaining the work to non-specialists, reviewers, interviewers, and audiences. Shorter audience-specific versions (elevator pitch, interview answer, poster abstract) derive from this.*
 
@@ -55,7 +55,7 @@ For 80 years, engineers have been trying to write down equations that predict ho
 
 The problem is that no two boiling setups are quite the same. A correlation developed for a 25 mm copper tube with water at atmospheric pressure does not necessarily work for a 300 µm rectangular channel with HFE-7100 at 2 bar. As channels get smaller (microchannels, hydraulic diameter under 1 mm), the physics shifts. Surface tension becomes more important than gravity. Bubbles fill the channel cross-section. Flow patterns change. The macro-scale correlations stop working.
 
-This is exactly what Qu & Mudawar showed in their 2003 paper: they tested **11 different correlations** against water boiling in a microchannel heat sink, and **all 11 failed**. The best one got the magnitude roughly right but missed the trend entirely; the worst was off by 272%. That's not a small calibration issue — that's the physics being fundamentally different from what the correlations were built for.
+This is exactly what Qu & Mudawar showed in their 2003 paper: they tested **11 different correlations** against water boiling in a microchannel heat sink, and **all 11 failed**. The best one got the magnitude roughly right but missed the trend entirely; the worst was off by 272%. That's not a small calibration issue — that's the physics being fundamentally different from what the correlations were built for. And this isn't a problem that more data solved: a decade later, Kim & Mudawar (2013) built the most comprehensive correlation available — 10,805 data points, 18 different fluids, channels from 0.19 to 6.5 mm — and it still predicts the wrong trend for water in microchannels. The failure is structural, baked into the functional form of every superposition-type correlation, not a matter of insufficient data or outdated constants.
 
 ## So where does CFD come in
 
