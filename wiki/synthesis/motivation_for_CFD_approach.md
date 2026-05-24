@@ -58,9 +58,14 @@ This synthesis directly supports the paper's introduction argument: "Correlation
 
 The argument is now supported by **two independent lines of evidence**: Qu & Mudawar 2003 (11 correlations fail on trend) and Kim & Mudawar 2013 (the best universal correlation, developed with 10,805 data points and 18 fluids, also fails on trend for water microchannels). The failure is not a matter of insufficient data or outdated correlations — it is a structural limitation of superposition-type functional forms for this specific fluid/geometry/regime combination.
 
+### Manifold architecture adds a third motivation layer
+
+Drummond et al. 2018 demonstrates that the state-of-the-art manifold microchannel architecture requires **co-optimization of manifold and channel geometry** — at high mass fluxes, manifold losses contribute up to 70% of total pressure drop [Drummond 2018]. No 1D correlation can capture the 3D manifold flow splitting and recombination losses. This is a distinct motivation from the HTC-trend failure: even if a perfect HTC correlation existed, it could not optimize the manifold. CFD is required for the full design space.
+
 ## Cross-References
 
 - [[QuMudawar2003_microchannel_boiling_I]]
 - [[KimMudawar2013_universal_boiling_II]]
 - [[HallMudawar2000_subcooled_CHF]]
 - [[KrepperRzehak2011_DEBORA]]
+- [[Drummond2018_manifold_microchannel]]

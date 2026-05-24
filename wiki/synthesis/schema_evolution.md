@@ -51,6 +51,24 @@ Added sensitivity/criticality column to the setup-recipe table convention for CF
 
 **Why:** Conflating authorship and citation chains in entity pages muddies what entity pages mean. If every paper that *cites* a Mudawar paper links to `[[mudawar_group]]`, the entity page becomes a citation index rather than an authorship registry. Citation chains are already captured by paper-to-paper cross-references.
 
+## [2026-05-24] Correlation-development papers — no new sub-type
+
+**What:** Kim & Mudawar 2013 (universal saturated-boiling HTC correlation) is the first "correlation-development" paper ingested. Its page extends the template with Correlation Equations, Applicability Map, and Calibration Data sections — handled entirely by the existing "template is a floor, not a ceiling" precedent. No formal sub-type or sub-template created.
+
+**Why:** The pattern already accommodates this naturally, just as it did for experimental vs. CFD papers. Formalizing sub-types would add schema weight without actionable benefit. Documented here so future correlation-paper ingests follow suit without re-litigating.
+
+## [2026-05-24] Experimental papers split into two sub-roles
+
+**What:** With Drummond et al. 2018, experimental papers now serve two distinct functional roles: (1) **validation benchmarks** (Qu & Mudawar 2003) — Applicability section foregrounds "can we reproduce this in CFD?" with geometry tables optimized for Fluent setup; (2) **baseline design sheets** (Drummond 2018) — Applicability section foregrounds "what would beating this by 15% look like?" with baseline-comparison logic and performance ceilings. Both share the same outer structure and Geometry/Data Available sections.
+
+**Why:** The distinction is in how the Applicability section is framed, not in the template skeleton. Validation benchmarks define gates in the validation pipeline (CLAUDE.md registry). Baseline design sheets define optimization targets. The pattern will recur (e.g., Mandel & Garimella when ingested). No sub-template needed — handled by the floor-not-ceiling convention.
+
+## [2026-05-24] Heat flux reporting convention adopted
+
+**What:** All heat fluxes reported in the wiki refer to **chip-level device heat flux** (q″_device = Q_net / A_chip) unless explicitly noted as base heat flux (q″_base = Q_net / A_channel_base). Convention defined on [[Drummond2018_manifold_microchannel]] and referenced from any future comparison page.
+
+**Why:** Different papers reference heat flux to different areas (channel base area, heat sink footprint, chip footprint). For cross-study comparisons and the ≥15% improvement criterion, a consistent convention is essential. Device heat flux is chosen because it represents the system-level constraint (watts per unit chip area that must be dissipated), which is what end users care about.
+
 ## [2026-05-20] Added wiki/synthesis/open_questions.md
 
 **What:** Created a consolidated open-questions tracker that mirrors all `<!-- TODO -->` items and unresolved questions from across the wiki. Inline TODOs stay on source pages (close to context); the tracker provides a single view for prioritization. Updated during each lint pass.

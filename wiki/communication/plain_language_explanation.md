@@ -1,13 +1,13 @@
 ---
 title: "Plain-Language Explanation of the Project"
 type: communication
-last_updated: 2026-05-22
+last_updated: 2026-05-24
 tags: [communication, explanation, audience-facing, physics-first]
 ---
 
 # Plain-Language Explanation of the Project
 
-*Last updated: after 4 ingests (Hall & Mudawar 2000, Krepper & Rzehak 2011, Qu & Mudawar 2003, Kim & Mudawar 2013)*
+*Last updated: after 5 ingests (Hall & Mudawar 2000, Krepper & Rzehak 2011, Qu & Mudawar 2003, Kim & Mudawar 2013, Drummond et al. 2018)*
 
 *Purpose: This is the canonical long-form physics-first explanation of the project. Used for explaining the work to non-specialists, reviewers, interviewers, and audiences. Shorter audience-specific versions (elevator pitch, interview answer, poster abstract) derive from this.*
 
@@ -83,6 +83,14 @@ This paper is the bridge from "boiling in tubes" to "boiling in microchannel col
 
 It also gave us the killer motivational finding I mentioned: existing correlations are not just inaccurate for microchannel water boiling, they get the *trend* wrong. The heat transfer coefficient *decreases* with quality in microchannels (the opposite of macroscale behavior), and no existing correlation captures that. This means design optimization based on correlations is fundamentally unreliable in this regime, and CFD is the only credible path.
 
+## What Drummond shows is possible
+
+By this point, a careful reader should have a nagging question: if boiling happens at the scale of individual bubbles in channels tens or hundreds of micrometers wide, but the chip you're trying to cool is centimeters across — how do you actually build the cold plate? A single long microchannel spanning the chip would have enormous pressure drop. For a 50 mm chip with 200 µm channels, the required pumping power becomes impractical.
+
+The answer is a **manifold microchannel** architecture. Instead of running fluid the full length of the chip, you use a manifold — a branching distribution network — to deliver coolant to many short, parallel microchannels and collect the heated mixture downstream. Each channel is only a few hundred micrometers long. The flow length is decoupled from the chip size. You get the enormous heat transfer of boiling in tiny channels without the crushing pressure drop of pushing fluid through them over long distances.
+
+Drummond et al. (2018) demonstrated this architecture. They etched arrays of microchannels directly into a silicon chip, fed them with a hierarchical manifold, and used HFE-7100 — a dielectric coolant safe for direct contact with electronics — as the working fluid. The result: base heat fluxes up to 910 W/cm² at pressure drops below 162 kPa and chip-to-fluid temperature rises under 47°C. (A note on metrics: "base heat flux" here refers to heat flux at the chip footprint area. In Drummond's geometry the chip and heat sink footprint are the same, so base and device heat flux are equal; in a remote cold plate — like the one we're designing — they can differ.) This is both the architectural template we adopt for our cold plate and the published baseline we're trying to beat by at least 15% on thermal resistance.
+
 ## Putting it all together: what we're trying to do
 
 You're building a computational framework that does three things:
@@ -93,8 +101,8 @@ You're building a computational framework that does three things:
 
 **Third**, once the model is validated and trustworthy, use it to *optimize* the cold plate design. Sweep through different channel widths, depths, manifold geometries, flow rates, working fluids — find combinations that move heat better with less pumping power, while staying away from CHF. This is where machine learning comes in eventually: train a surrogate model on the CFD results so you can explore the design space orders of magnitude faster than running full simulations.
 
-The end goal is a cold plate design — a specific geometry, with specific operating conditions — that beats published baselines for cooling AI chips. That's the paper. And along the way you build a reusable computational pipeline that companies like ACT, JetCool, and the hyperscalers actually need but rarely have built rigorously, because most of this work in industry happens with correlations that we now know don't work for this regime.
+The end goal is a cold plate design — a specific geometry, with specific operating conditions — that beats the published state of the art. The target is Drummond et al. 2018's manifold microchannel cold plate, which achieves an effective thermal resistance of 5.6 × 10⁻⁶ m²·K/W; we aim to reduce that by at least 15%. That's the paper. And along the way you build a reusable computational pipeline that companies like ACT, JetCool, and the hyperscalers actually need but rarely have built rigorously, because most of this work in industry happens with correlations that we now know don't work for this regime.
 
 ## The one-paragraph version
 
-Modern AI chips dump so much heat into so small an area that conventional cooling fails. The only physics that can handle the load is **boiling**, because phase change absorbs enormous energy without raising temperature. But boiling in the tiny channels needed for cold plates is poorly predicted by existing equations — they were developed for larger tubes and different fluids, and they get the answer wrong, sometimes catastrophically wrong. You're building a CFD-based framework that simulates the boiling physics directly, validates against benchmark experiments to prove it's trustworthy, and then uses that validated model to design better cold plates than anyone has published. The papers you've read so far establish the safety boundary (Hall & Mudawar — CHF limits), the validation method (Krepper & Rzehak — RPI model in a benchmark geometry), and the application case (Qu & Mudawar — water boiling in the microchannel geometry class that matters). The rest of the project builds the framework, runs the optimization, and writes the paper.
+Modern AI chips dump so much heat into so small an area that conventional cooling fails. The only physics that can handle the load is **boiling**, because phase change absorbs enormous energy without raising temperature. But boiling in the tiny channels needed for cold plates is poorly predicted by existing equations — they were developed for larger tubes and different fluids, and they get the answer wrong, sometimes catastrophically wrong. You're building a CFD-based framework that simulates the boiling physics directly, validates against benchmark experiments to prove it's trustworthy, and then uses that validated model to design better cold plates than anyone has published. The papers you've read so far establish the safety boundary (Hall & Mudawar — CHF limits), the validation method (Krepper & Rzehak — RPI model in a benchmark geometry), and the application case (Qu & Mudawar — water boiling in the microchannel geometry class that matters). The published state of the art is Drummond et al. 2018's manifold microchannel cold plate, which dissipates 910 W/cm² with a dielectric coolant; the project aims to beat its thermal resistance by at least 15%. The rest of the project builds the framework, runs the optimization, and writes the paper.

@@ -28,10 +28,18 @@ _This table will grow as additional CHF correlations are ingested (Bowring, Katt
 
 CHF defines the hard safety constraint in the cold plate optimization: operating heat flux must remain below q″_CHF / 1.5 (safety factor ≥ 1.5). The Hall & Mudawar inlet-conditions correlation is the primary tool for evaluating this constraint across the design space. It will be implemented in `src/two_phase_cp/correlations/` and used in both the 1D analytical model and as a post-processing check on CFD results.
 
+## CHF Data Points from Experimental Papers
+
+| Source | Fluid | Geometry | d_h (um) | G (kg/m^2 s) | CHF (W/cm^2) | x_out at CHF | Notes |
+|--------|-------|----------|----------|-------------|--------------|--------------|-------|
+| [Drummond 2018] | HFE-7100 | Manifold MMC, Si, 15 x 35 um | 19.6 | 1300–2900 | 68.5–142 | 0.18–0.28 | CHF reached |
+| [Drummond 2018] | HFE-7100 | Manifold MMC, Si, 15 x 150 um | 28.8 | 1300–2900 | 411–705 | 0.18–0.28 | CHF reached |
+| [Drummond 2018] | HFE-7100 | Manifold MMC, Si, 15 x 300 um | 31.7 | 1300–2900 | 761–910 | — | **No CHF** — terminated at T_chip safety limit |
+
 ## Open Questions
 
 - How much additional uncertainty does the hydraulic-diameter substitution (D → D_h) introduce for rectangular microchannels? Needs cross-validation against rectangular channel data (see [[QuMudawar2003_microchannel_boiling_I]]).
-- Does the correlation remain accurate for dielectric fluids (HFE-7100, Novec 649)? Hall & Mudawar is water-only; a separate CHF correlation or scaling law will be needed for Phase 2.
+- Does the correlation remain accurate for dielectric fluids (HFE-7100, Novec 649)? Hall & Mudawar is water-only; a separate CHF correlation or scaling law will be needed for Phase 2. Drummond 2018 provides CHF data points for HFE-7100 in manifold microchannels (see table above) but no correlation.
 - Behavior near saturation (x_o > −0.05) is less reliable — relevant if cold plate channels approach saturated exit conditions.
 
 ## Cross-References
@@ -39,3 +47,5 @@ CHF defines the hard safety constraint in the cold plate optimization: operating
 - [[HallMudawar2000_subcooled_CHF]]
 - [[mudawar_group]]
 - [[QuMudawar2003_microchannel_boiling_I]]
+- [[Drummond2018_manifold_microchannel]]
+- [[garimella_group]]
