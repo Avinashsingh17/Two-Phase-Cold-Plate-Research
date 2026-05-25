@@ -36,6 +36,8 @@ CHF defines the hard safety constraint in the cold plate optimization: operating
 | [Drummond 2018] | HFE-7100 | Manifold MMC, Si, 15 x 150 um | 28.8 | 1300–2900 | 411–705 | 0.18–0.28 | CHF reached |
 | [Drummond 2018] | HFE-7100 | Manifold MMC, Si, 15 x 300 um | 31.7 | 1300–2900 | 761–910 | — | **No CHF** — terminated at T_chip safety limit |
 
+CHF reported as base heat flux per Drummond Table 4; equals device heat flux for this geometry (A_b = A_chip). Future entries to specify base/device per project convention (see [[schema_evolution]] entry 2026-05-24).
+
 ## Open Questions
 
 - How much additional uncertainty does the hydraulic-diameter substitution (D → D_h) introduce for rectangular microchannels? Needs cross-validation against rectangular channel data (see [[QuMudawar2003_microchannel_boiling_I]]).

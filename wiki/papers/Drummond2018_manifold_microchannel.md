@@ -196,7 +196,7 @@ In this specific experiment, q"_base = q"_device because the 3 x 3 heat sink arr
 - The cold plate footprint differs from the chip area (common in remote/attached cold plates)
 - The heat sink only partially covers the heated surface
 
-For the **>= 15% improvement criterion**, we compare device heat flux at matched chip-to-coolant temperature rise, or equivalently R_eff at matched pumping power. This ensures an apples-to-apples comparison regardless of how different papers define their reference area.
+For the **>= 15% improvement criterion**, we compare R_eff at matched pumping power. R_eff is geometry-invariant (it normalizes by chip footprint area); heat flux targets are ambiguous because they depend on reference surface. This ensures an apples-to-apples comparison regardless of how different papers define their reference area.
 
 ## Applicability to This Project
 
@@ -215,11 +215,10 @@ This makes the manifold architecture a candidate template for our cold plate geo
 
 ### What beating Drummond by 15% looks like
 
-| Metric | Drummond best | 15% improvement target |
-|--------|--------------|----------------------|
-| R_eff | 5.6 x 10^-6 m^2 K/W | < 4.8 x 10^-6 m^2 K/W |
-| q"_device at DT = 47 C | 910 W/cm^2 | > 1045 W/cm^2 |
-| DP at matched q" | 162 kPa | < 138 kPa |
+| Metric | Drummond best | 15% improvement target | Notes |
+|--------|--------------|----------------------|-------|
+| **R_eff** (primary) | 5.6 x 10^-6 m^2 K/W | < 4.8 x 10^-6 m^2 K/W | Geometry-invariant; this is the binding criterion |
+| DP at matched R_eff | 162 kPa | < 138 kPa | Or: equivalent R_eff at >= 15% lower DP |
 
 Candidate improvement levers:
 - **Fin density optimization:** Drummond uses 30 um pitch (15 um channel + 15 um fin). Is this optimal? Fin efficiency drops to 58% for Sample C — there may be a better pitch that trades fin count for efficiency.
