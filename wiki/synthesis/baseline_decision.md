@@ -40,5 +40,6 @@ Two options were considered for how Drummond serves as baseline given the fluid 
 ## Cross-References
 
 - [[Drummond2018_manifold_microchannel]]
+- [[Ozguc2024_topology_optimization]]
 - [[open_questions]]
 - [[motivation_for_CFD_approach]]

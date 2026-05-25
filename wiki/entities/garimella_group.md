@@ -14,12 +14,12 @@ Professor Suresh V. Garimella leads the Cooling Technologies Research Center (CT
 - Designed, fabricated, and characterized hierarchical manifold microchannel heat sink arrays for intrachip two-phase cooling, demonstrating base heat fluxes up to 910 W/cm^2 with HFE-7100 at pressure drops < 162 kPa [Drummond 2018].
 - Extensive experimental campaigns on flow boiling of dielectric fluids (HFE-7100, R134a, R245a) in microchannel and manifold microchannel geometries.
 - Numerical optimization studies of manifold microchannel geometries for single-phase and two-phase operation.
-
-_This section will grow as additional Garimella group papers are ingested._
+- Developed the first topology optimization framework for two-phase flow boiling heat sinks, using a homogenization approach with experimentally calibrated mixture-model correlations. Demonstrated experimentally validated Pareto-optimal designs fabricated via DMLS [Ozguc 2024 Parts 1 & 2].
 
 ## Associated Publications
 
 - [[Drummond2018_manifold_microchannel]]
+- [[Ozguc2024_topology_optimization]]
 
 ## Cross-References
 

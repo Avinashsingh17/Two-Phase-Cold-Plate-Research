@@ -33,6 +33,7 @@ Consolidated list of all open `<!-- TODO -->` items and unresolved questions acr
 
 | 11 | [[Drummond2018_manifold_microchannel]] | In the low-quality regime (x_out < 0.1), HTC is roughly independent of channel cross-section for all three geometries tested. If HTC doesn't strongly depend on cross-section in the confined regime, the dominant design levers are (a) wall area per unit footprint via fin density/efficiency and (b) staying below dryout quality — not channel aspect ratio per se. Does this hold for water and for our cold plate scale? | May warrant a design-philosophy update: optimize fin density + dryout margin rather than aspect ratio. Verify with water microchannel data (Qu & Mudawar shows similar trend). |
 | 12 | [[Drummond2018_manifold_microchannel]] | HFE-7100 RPI closure source for Phase 2 optimization — **scoped, outcome (a) with significant caveats** | See detailed entry below |
+| 13 | [[Ozguc2024_topology_optimization]] | Should we optimize for a single operating point or across an envelope of heat loads? Two-phase TO designs are heat-load-dependent (unlike single-phase), so a design optimized at one Q_in may not be optimal at another. | Ozguc Part 1 Fig. 5 shows how designs change with Q_in. Relevant to Phase 5 objective function design: single-point optimization is simpler but may miss robustness; envelope optimization requires multi-point evaluation per candidate, increasing computational cost. |
 
 ## #12 Detail: HFE-7100 RPI Closure Source (Resolved to Scoped Workstream)
 

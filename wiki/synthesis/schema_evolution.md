@@ -69,6 +69,12 @@ Added sensitivity/criticality column to the setup-recipe table convention for CF
 
 **Why:** Different papers reference heat flux to different areas (channel base area, heat sink footprint, chip footprint). For cross-study comparisons and the ≥15% improvement criterion, a consistent convention is essential. Device heat flux is chosen because it represents the system-level constraint (watts per unit chip area that must be dissipated), which is what end users care about.
 
+## [2026-05-24] Paired-paper convention for multi-part studies
+
+**What:** Ozguc, Pan & Weibel 2024 Parts 1 and 2 are ingested on a single wiki page (`Ozguc2024_topology_optimization.md`) rather than two separate pages. The page covers both papers with sections clearly attributing findings to Part 1 or Part 2.
+
+**Why:** Parts 1 and 2 form a single intellectual unit (framework + calibration/validation). Splitting them would fragment the narrative and require constant cross-referencing between two pages for a workflow that only makes sense as a whole. This is a convention for multi-part companion papers, not a new sub-type. Single-page treatment applies when the parts are published together and share authorship; independently published follow-ups from different groups would still get separate pages.
+
 ## [2026-05-20] Added wiki/synthesis/open_questions.md
 
 **What:** Created a consolidated open-questions tracker that mirrors all `<!-- TODO -->` items and unresolved questions from across the wiki. Inline TODOs stay on source pages (close to context); the tracker provides a single view for prioritization. Updated during each lint pass.

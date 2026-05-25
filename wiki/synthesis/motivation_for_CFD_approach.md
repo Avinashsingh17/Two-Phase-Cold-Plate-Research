@@ -62,6 +62,10 @@ The argument is now supported by **two independent lines of evidence**: Qu & Mud
 
 Drummond et al. 2018 demonstrates that the state-of-the-art manifold microchannel architecture requires **co-optimization of manifold and channel geometry** — at high mass fluxes, manifold losses contribute up to 70% of total pressure drop [Drummond 2018]. No 1D correlation can capture the 3D manifold flow splitting and recombination losses. This is a distinct motivation from the HTC-trend failure: even if a perfect HTC correlation existed, it could not optimize the manifold. CFD is required for the full design space.
 
+### Ozguc 2024 adds a fourth layer: even simplified TO needs calibration
+
+Ozguc, Pan & Weibel 2024 developed the first topology optimization framework for two-phase flow boiling, using a Bertsch-form HTC correlation coupled with a homogeneous mixture model. However, Part 2 reveals that the uncalibrated correlation — despite being designed for small-channel flow boiling — required 14 free coefficients to be experimentally fitted against 214 DMLS pin-fin flow boiling tests before the optimizer could produce genuinely Pareto-optimal designs [Ozguc 2024]. The calibration reduced prediction error by 94%. This is a fourth, independent line of evidence: **even when correlations are embedded inside an optimization loop, they require geometry- and fluid-specific calibration to produce trustworthy designs.** Our Eulerian/RPI approach, validated against benchmark data, provides a higher-fidelity alternative to this calibration-dependent surrogate approach.
+
 ## Cross-References
 
 - [[QuMudawar2003_microchannel_boiling_I]]
@@ -69,3 +73,4 @@ Drummond et al. 2018 demonstrates that the state-of-the-art manifold microchanne
 - [[HallMudawar2000_subcooled_CHF]]
 - [[KrepperRzehak2011_DEBORA]]
 - [[Drummond2018_manifold_microchannel]]
+- [[Ozguc2024_topology_optimization]]
