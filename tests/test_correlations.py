@@ -20,49 +20,50 @@ from two_phase_cp.correlations import (
 
 
 # ---------------------------------------------------------------------------
-# Dittus-Boelter — awaiting verified textbook reference
+# Dittus-Boelter — Incropera 7e, Example 8.6 (hot air cooling in duct)
 # ---------------------------------------------------------------------------
-# Inputs from Incropera 8e Ex 8.4: Water at T_m = 35 °C, 25-mm-ID tube,
-# 0.2 kg/s.  Re = 4 m_dot / (pi D mu) = 14,050.  Pr = 4.85.
-# The expected Nu value needs verification against the actual textbook —
-# a previous hand calculation used an incorrect Re^0.8 ≈ 2637 (actual: 2080).
+# Air at T_m = 427 °C flows through an uninsulated duct (D = 0.05 m).
+# Properties at T_m: Re = 20050, Pr = 0.698.  Air is being cooled (T_w < T_b),
+# so n = 0.3.
+# Exact: Nu = 0.023 * 20050^0.8 * 0.698^0.3 = 57.1
+# Textbook states Nu_D = 56.4 (1.2% gap from intermediate rounding).
 
-@pytest.mark.skip(reason="awaiting Incropera 8e Ex 8.4 verified reference value")
-def test_dittus_boelter_incropera_8_4():
-    """Incropera & Bergman 8e, Example 8.4 — water in a tube, heating.
+def test_dittus_boelter_incropera_7e_ex8_6_cooling():
+    """Incropera 7e Example 8.6. Exact formula gives 57.1; textbook states
+    56.4; 1.2% gap is textbook intermediate rounding. ±2% tolerance is set
+    by that gap and is tight enough to fail an n=0.4 (heating) miscode,
+    which yields 55.1.
+    """
+    Re = 20_050.0
+    Pr = 0.698
+    Nu = dittus_boelter(Re, Pr, n=0.3)
+    assert Nu == pytest.approx(56.4, rel=0.02)
 
-    TODO: Verify expected Nu from Incropera 8e and fill in here.
-    Inputs (Re=14050, Pr=4.85) are correct per the problem statement.
+    # Confirm n-branch is load-bearing: n=0.4 (heating) gives ~55.1,
+    # which must NOT be within ±2% of the cooling reference value 56.4.
+    Nu_heating = dittus_boelter(Re, Pr, n=0.4)
+    assert Nu_heating != pytest.approx(56.4, rel=0.02)
+
+
+# ---------------------------------------------------------------------------
+# Gnielinski — awaiting textbook reference (likely Çengel & Ghajar Ch 8)
+# ---------------------------------------------------------------------------
+# Incropera's worked examples use Dittus-Boelter (Eq 8.60), not Gnielinski.
+# No Gnielinski textbook reference value is available yet.
+
+@pytest.mark.skip(reason="no Incropera Gnielinski worked example exists — awaiting reference (likely Çengel & Ghajar Ch 8)")
+def test_gnielinski_textbook():
+    """Gnielinski validated against a textbook worked example.
+
+    TODO: Source a worked example that uses the Gnielinski correlation
+    (not Dittus-Boelter). Inputs (Re=14050, Pr=4.85) preserved for
+    future activation once an expected Nu value is available.
     """
     Re = 14_050.0
     Pr = 4.85
-    Nu = dittus_boelter(Re, Pr, n=0.4)
+    Nu = gnielinski(Re, Pr)
     # TODO: replace with verified textbook value
     assert Nu == pytest.approx(..., rel=0.01)
-
-
-# ---------------------------------------------------------------------------
-# Gnielinski — Incropera & Bergman 8e, Example 8.5 (same geometry)
-# ---------------------------------------------------------------------------
-# Incropera uses same Re=14050, Pr=4.85.
-# Petukhov f = (0.790 ln 14050 - 1.64)^-2
-#   ln(14050) = 9.550 → 0.790*9.550 - 1.64 = 5.905 → f = 1/5.905^2 = 0.02868
-# f/8 = 0.003585
-# Nu = 0.003585 * (14050-1000) * 4.85 / [1 + 12.7 * sqrt(0.003585) * (4.85^(2/3) - 1)]
-# Numerator = 0.003585 * 13050 * 4.85 = 226.8
-# sqrt(f/8) = 0.05988
-# Pr^(2/3) = 4.85^0.6667 = 2.871 → 2.871 - 1 = 1.871
-# Denominator = 1 + 12.7 * 0.05988 * 1.871 = 1 + 1.423 = 2.423
-# Nu = 226.8 / 2.423 = 93.6
-# h = 93.6 * 0.625 / 0.025 = 2340 W/m²K
-# Textbook reports Nu ≈ 90–94 range.
-
-def test_gnielinski_incropera_8_5():
-    """Incropera & Bergman 8e, Example 8.5 — Gnielinski for same conditions."""
-    Re = 14_050.0
-    Pr = 4.85
-    Nu = gnielinski(Re, Pr)
-    assert Nu == pytest.approx(93.6, rel=0.01)
 
 
 # ---------------------------------------------------------------------------

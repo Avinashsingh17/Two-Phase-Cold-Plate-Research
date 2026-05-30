@@ -9,45 +9,38 @@ Do NOT change implementation code until root causes are identified here.
 import math
 
 # ===================================================================
-# 1. DITTUS-BOELTER — Re=14050, Pr=4.85, n=0.4
-#    Test expects Nu ≈ 115.5 (claimed Incropera 8e Ex 8.4)
-#    Code returns ~90.0
+# 1. DITTUS-BOELTER — Incropera 7e Example 8.6 (air cooling in duct)
+#    Re=20050, Pr=0.698, n=0.3 (cooling). Textbook states Nu_D = 56.4.
 # ===================================================================
 print("=" * 70)
-print("1. DITTUS-BOELTER DIAGNOSTIC")
+print("1. DITTUS-BOELTER — Incropera 7e Ex 8.6 verification")
 print("=" * 70)
 
-Re = 14_050.0
-Pr = 4.85
+Re = 20_050.0
+Pr = 0.698
 
 Re_08 = Re**0.8
+Pr_03 = Pr**0.3
 Pr_04 = Pr**0.4
-Nu_DB = 0.023 * Re_08 * Pr_04
+Nu_cooling = 0.023 * Re_08 * Pr_03
+Nu_heating = 0.023 * Re_08 * Pr_04
 
-print(f"  Re        = {Re:.0f}")
-print(f"  Pr        = {Pr}")
-print(f"  Re^0.8    = {Re_08:.2f}   (test comment claims 2637)")
-print(f"  Pr^0.4    = {Pr_04:.4f}   (test comment claims 1.905)")
-print(f"  Nu (D-B)  = 0.023 * {Re_08:.2f} * {Pr_04:.4f} = {Nu_DB:.2f}")
-print(f"  Test expected: 115.5")
+print(f"  Re          = {Re:.0f}")
+print(f"  Pr          = {Pr}")
+print(f"  Re^0.8      = {Re_08:.2f}")
+print(f"  Pr^0.3      = {Pr_03:.6f}")
+print(f"  Pr^0.4      = {Pr_04:.6f}")
 print()
-
-# What Re^0.8 is needed for Nu=115.5?
-Re_08_needed = 115.5 / (0.023 * Pr_04)
-Re_needed = Re_08_needed ** (1.0 / 0.8)
-print(f"  To get Nu=115.5, need Re^0.8 = {Re_08_needed:.1f}")
-print(f"  That corresponds to Re = {Re_needed:.0f}")
+print(f"  Nu (n=0.3, cooling) = 0.023 * {Re_08:.2f} * {Pr_03:.6f} = {Nu_cooling:.2f}")
+print(f"  Nu (n=0.4, heating) = 0.023 * {Re_08:.2f} * {Pr_04:.6f} = {Nu_heating:.2f}")
+print(f"  Textbook states: Nu_D = 56.4")
+print(f"  Exact formula:   Nu   = {Nu_cooling:.1f}")
+print(f"  Gap = {abs(Nu_cooling - 56.4) / 56.4 * 100:.1f}% (intermediate rounding in textbook)")
 print()
-
-# Verify Gnielinski at same conditions (this test PASSES)
-f = (0.790 * math.log(Re) - 1.64) ** (-2)
-f8 = f / 8.0
-Nu_G = f8 * (Re - 1000) * Pr / (1.0 + 12.7 * f8**0.5 * (Pr ** (2.0 / 3.0) - 1.0))
-print(f"  Gnielinski at same Re,Pr: Nu = {Nu_G:.2f}  (test expects 93.6 — PASSES)")
-print()
-print("  DIAGNOSIS: Re^0.8 = 14050^0.8 = {:.2f}, NOT 2637.".format(Re_08))
-print("  The test reference value Nu=115.5 was computed from the wrong Re^0.8.")
-print("  Implementation is correct. Test expected value is fabricated.")
+print(f"  n=0.3 vs n=0.4 difference: {abs(Nu_cooling - Nu_heating):.2f}")
+print(f"  n=0.4 value ({Nu_heating:.1f}) within 2% of 56.4? "
+      f"{'YES' if abs(Nu_heating - 56.4) / 56.4 < 0.02 else 'NO'}")
+print(f"  -> n-branch IS load-bearing: wrong n yields {Nu_heating:.1f}, not {Nu_cooling:.1f}")
 
 # ===================================================================
 # 2. BERGLES-ROHSENOW — sweep delta_T_sat at several pressures
