@@ -18,6 +18,7 @@ title: Wiki Index
 - [[CHF_correlations]] — Critical heat flux prediction methods; anchor page for all CHF correlations  [1 source]
 - [[RPI_wall_boiling_model]] — Heat flux partitioning framework (Kurul-Podowski); closure catalog, assumptions, failure modes  [1 source]
 - [[RPI_model_implementation]] — CFX-vs-Fluent translation checklist; UDF requirements, risk items  [1 source]
+- [[two_phase_fundamentals]] — Boiling curve, flow regimes, ONB/CHF transitions, dimensionless groups; foundational reference for all downstream work  [6 sources]
 
 ## Entities
 

@@ -250,6 +250,10 @@ Decision recorded in [[baseline_decision]]: adopt option (a). Phase 1–2 valida
 - [[QuMudawar2003_microchannel_boiling_I]]
 - [[open_questions]]
 
+### Concepts
+
+- [[two_phase_fundamentals]]
+
 ## Notes
 
 - Drummond 2018 is funded by DARPA ICECool (Intrachip/Interchip Enhanced Cooling). This program drove much of the manifold microchannel work at Purdue in 2013–2018.

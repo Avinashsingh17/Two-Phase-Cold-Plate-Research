@@ -51,3 +51,4 @@ CHF reported as base heat flux per Drummond Table 4; equals device heat flux for
 - [[QuMudawar2003_microchannel_boiling_I]]
 - [[Drummond2018_manifold_microchannel]]
 - [[garimella_group]]
+- [[two_phase_fundamentals]]

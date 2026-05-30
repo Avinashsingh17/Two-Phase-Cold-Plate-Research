@@ -65,3 +65,4 @@ For implementation details and CFX-vs-Fluent translation, see [[RPI_model_implem
 - [[RPI_model_implementation]]
 - [[CHF_correlations]]
 - [[QuMudawar2003_microchannel_boiling_I]]
+- [[two_phase_fundamentals]]

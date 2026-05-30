@@ -142,6 +142,10 @@ This is the Stage 2 validation geometry. Dimensions must be reproduced exactly i
 - [[QuMudawar2003_pressure_drop]]
 - [[QuMudawar2003_annular_model_II]]
 
+### Concepts
+
+- [[two_phase_fundamentals]]
+
 ## Notes
 
 - Inlet Reynolds number range is 60–300 (laminar). Macro-channel correlations assume turbulent flow (Dittus-Boelter base) — a fundamental mismatch explaining part of the correlation failure.

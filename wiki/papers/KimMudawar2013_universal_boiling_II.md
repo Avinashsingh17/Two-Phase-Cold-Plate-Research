@@ -149,6 +149,10 @@ where β < 1 is the channel aspect ratio (short side / long side).
 - [[mudawar_group]]
 - [[KimMudawar2013_dryout_incipience_I]]
 
+### Concepts
+
+- [[two_phase_fundamentals]]
+
 ## Notes
 
 - The correlation is optimized against pre-dryout data only. Post-dryout (x > x_di) heat transfer is not addressed; the mist flow regime requires separate treatment.

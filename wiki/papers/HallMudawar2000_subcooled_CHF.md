@@ -104,6 +104,10 @@ This paper provides the primary CHF correlation for computing critical heat flux
 - [[mudawar_group]]
 - [[QuMudawar2003_microchannel_boiling_I]]
 
+### Concepts
+
+- [[two_phase_fundamentals]]
+
 ## Notes
 
 - The outlet-conditions correlation degrades for near-saturated conditions (x_o > −0.05), suggesting a possible transition in the CHF trigger mechanism near saturation [Hall & Mudawar 2000].

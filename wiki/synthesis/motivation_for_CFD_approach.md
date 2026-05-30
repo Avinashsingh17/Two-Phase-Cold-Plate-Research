@@ -74,3 +74,4 @@ Ozguc, Pan & Weibel 2024 developed the first topology optimization framework for
 - [[KrepperRzehak2011_DEBORA]]
 - [[Drummond2018_manifold_microchannel]]
 - [[Ozguc2024_topology_optimization]]
+- [[two_phase_fundamentals]]

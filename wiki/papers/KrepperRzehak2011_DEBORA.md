@@ -105,6 +105,10 @@ with p = 1.805 and T_ref^N = 10 K (standard). **N_ref is the only free parameter
 - [[HallMudawar2000_subcooled_CHF]]
 - [[QuMudawar2003_microchannel_boiling_I]]
 
+### Concepts
+
+- [[two_phase_fundamentals]]
+
 ## Notes
 
 - The original RPI model source is Kurul & Podowski (1990, 1991) — on reading list as low-priority background for paper drafting. Not a Phase 3 prerequisite.
