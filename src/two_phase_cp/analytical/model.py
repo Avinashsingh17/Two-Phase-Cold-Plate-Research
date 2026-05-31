@@ -1,0 +1,402 @@
+"""1D segmented analytical model for heated channel flow.
+
+Forward-marches energy balance from inlet to outlet.  Properties evaluated
+at local (P, h) state — sequential, no global iteration.
+
+Regime detection:
+  - Single-phase: Dittus-Boelter (default)
+  - Subcooled boiling: Bergles & Rohsenow (1964) partial boiling interpolation
+  - Saturated boiling: Kandlikar 1990 (default)
+  - CHF breach (subcooled): Hall & Mudawar 2000 — raises CHFExceededError
+
+Source for partial boiling interpolation:
+  Bergles & Rohsenow (1964), J. Heat Transfer, 86, 365-372.
+
+Known gaps (documented, not yet implemented):
+  - Saturated CHF correlation (Katto-Ohno) — saturated cells have unchecked CHF
+  - Developed nucleate boiling correlation (e.g. Rohsenow pool boiling) — the
+    FDB asymptote in the partial boiling interpolation currently reuses the BR
+    incipience curve as a stand-in.  Valid near ONB; not validated as an FDB
+    curve at high subcooled superheat.
+  - Two-phase pressure drop (Friedel, Lockhart-Martinelli) — two-phase cells
+    report pressure_drop = None
+"""
+
+from __future__ import annotations
+
+from collections.abc import Sequence
+
+import CoolProp.CoolProp as CP
+from scipy.optimize import brentq
+
+from two_phase_cp.analytical._types import (
+    CellResult,
+    ChannelGeometry,
+    ChannelResult,
+    CHFExceededError,
+    CrossSection,
+    Regime,
+)
+from two_phase_cp.correlations.boiling import kandlikar_1990
+from two_phase_cp.correlations.chf import hall_mudawar_2000
+from two_phase_cp.correlations.onb import bergles_rohsenow_onb
+from two_phase_cp.correlations.single_phase import (
+    _petukhov_friction,
+    dittus_boelter,
+)
+from two_phase_cp.properties.water import (
+    liquid_state_at_Ph,
+    water_properties_at_pressure,
+)
+
+# Alias: the BR incipience correlation serves as both the ONB criterion and,
+# as a stand-in, the nucleate boiling curve in the partial boiling
+# interpolation.  Near ONB (where the boiling term is small) this is correct.
+# At high subcooled superheat the true FDB curve (Rohsenow pool boiling or
+# similar) would give a different asymptote — this is a documented gap.
+bergles_rohsenow_curve = bergles_rohsenow_onb
+
+
+# ---------------------------------------------------------------------------
+# Partial boiling helpers
+# ---------------------------------------------------------------------------
+
+
+def _find_onb_wall_temp(
+    P_bar: float,
+    h_sp: float,
+    T_bulk: float,
+    T_sat: float,
+) -> float:
+    """Find T_w at intersection of single-phase line and BR boiling curve.
+
+    Solves: BR(P, T_w - T_sat) = h_sp * (T_w - T_bulk)
+
+    The intersection defines the ONB wall temperature.  Below this T_w the
+    single-phase line exceeds the boiling curve (no boiling); above it the
+    boiling curve exceeds the single-phase line (boiling possible).
+
+    Returns T_w_onb [K].
+    """
+
+    def residual(T_w: float) -> float:
+        delta_T_sat = T_w - T_sat
+        if delta_T_sat <= 0.0:
+            q_br = 0.0
+        else:
+            q_br = bergles_rohsenow_curve(P_bar, delta_T_sat)
+        q_fc = h_sp * (T_w - T_bulk)
+        return q_br - q_fc
+
+    # At T_sat: BR=0, q_fc = h_sp*(T_sat-T_bulk) > 0 → residual < 0
+    # At T_sat+100: BR >> q_fc typically → residual > 0
+    return brentq(residual, T_sat, T_sat + 100.0, xtol=1e-6)
+
+
+def _solve_partial_boiling(
+    q_applied: float,
+    h_sp: float,
+    T_bulk: float,
+    T_sat: float,
+    P_bar: float,
+    q_onb: float,
+    T_w_onb: float,
+) -> float:
+    """Find T_w via Bergles & Rohsenow (1964) partial boiling interpolation.
+
+    q = sqrt( [h_sp*(T_w - T_bulk)]^2 + [max(0, BR(P, T_w-T_sat) - q_onb)]^2 )
+
+    Bracket: [T_w_onb, T_bulk + q_applied/h_sp].
+
+    Note: the BR incipience curve is used as a stand-in for the fully-developed
+    nucleate boiling curve.  This is exact at ONB (boiling term vanishes) and
+    approximate at high superheat.  See module docstring for known gaps.
+
+    Source: Bergles & Rohsenow (1964), J. Heat Transfer, 86, 365-372.
+    """
+    T_w_sp = T_bulk + q_applied / h_sp  # upper bracket: single-phase T_w
+
+    def residual(T_w: float) -> float:
+        q_fc = h_sp * (T_w - T_bulk)
+        delta_T_sat = T_w - T_sat
+        if delta_T_sat > 0.0:
+            q_br = bergles_rohsenow_curve(P_bar, delta_T_sat)
+            boiling = max(0.0, q_br - q_onb)
+        else:
+            boiling = 0.0
+        return (q_fc**2 + boiling**2) ** 0.5 - q_applied
+
+    return brentq(residual, T_w_onb, T_w_sp, xtol=1e-6)
+
+
+# ---------------------------------------------------------------------------
+# Main solver
+# ---------------------------------------------------------------------------
+
+
+def solve_channel(
+    geometry: ChannelGeometry,
+    G: float,
+    T_in: float,
+    P_in: float,
+    q_flux: float | Sequence[float],
+    n_cells: int,
+) -> ChannelResult:
+    """Solve 1D segmented energy balance along a heated channel.
+
+    Parameters
+    ----------
+    geometry : ChannelGeometry
+        Channel geometry specification.
+    G : float
+        Mass flux [kg/(m^2*s)].
+    T_in : float
+        Inlet temperature [K].
+    P_in : float
+        Inlet pressure [Pa].
+    q_flux : float or sequence of float
+        Applied wall heat flux [W/m^2].  Scalar for uniform; sequence of
+        length *n_cells* for spatially varying.
+    n_cells : int
+        Number of axial segments.
+
+    Returns
+    -------
+    ChannelResult
+        Aggregate and per-cell results.
+
+    Raises
+    ------
+    CHFExceededError
+        If applied heat flux meets or exceeds subcooled CHF at any cell.
+    """
+    dz = geometry.L / n_cells
+
+    # Heat flux array
+    if isinstance(q_flux, (int, float)):
+        q = [float(q_flux)] * n_cells
+    else:
+        q = list(q_flux)
+        if len(q) != n_cells:
+            raise ValueError(
+                f"q_flux length {len(q)} != n_cells {n_cells}"
+            )
+
+    # Inlet state
+    h_in = CP.PropsSI("H", "P", P_in, "T", T_in, "Water")
+
+    # Channel-level CHF (subcooled, Hall & Mudawar 2000)
+    sat_inlet = water_properties_at_pressure(P_in)
+    h_f_inlet = CP.PropsSI("H", "P", P_in, "Q", 0, "Water")
+    x_i_prime = (h_in - h_f_inlet) / sat_inlet.h_fg
+    q_chf_channel = hall_mudawar_2000(
+        G=G,
+        D=geometry.D_h,
+        L=geometry.L,
+        x_i_prime=x_i_prime,
+        rho_f=sat_inlet.rho_f,
+        rho_g=sat_inlet.rho_g,
+        h_fg=sat_inlet.h_fg,
+        sigma=sat_inlet.sigma,
+    )
+
+    # Forward march
+    h_march = h_in
+    P_march = P_in
+    cells: list[CellResult] = []
+
+    for i in range(n_cells):
+        z_center = (i + 0.5) * dz
+        q_i = q[i]
+
+        # Saturation properties at local pressure
+        sat = water_properties_at_pressure(P_march)
+
+        # Liquid state at (P, h) — local bulk properties
+        liq = liquid_state_at_Ph(P_march, h_march)
+
+        # Thermodynamic equilibrium quality
+        h_f = CP.PropsSI("H", "P", P_march, "Q", 0, "Water")
+        x_eq = (h_march - h_f) / sat.h_fg
+
+        # Reynolds number
+        Re = G * geometry.D_h / liq.mu
+
+        # Envelope checks
+        violations: list[str] = []
+        if geometry.cross_section == CrossSection.RECTANGULAR:
+            violations.append(
+                "Rectangular channel — round-tube correlations applied via D_h"
+            )
+
+        # --- Regime detection and HTC computation ---
+
+        if x_eq >= 0.0:
+            # SATURATED BOILING
+            regime = Regime.SATURATED_BOILING
+            correlation_name = "Kandlikar 1990"
+
+            x_clamped = max(x_eq, 1e-6)
+            h_tp = kandlikar_1990(
+                x=x_clamped,
+                G=G,
+                D_h=geometry.D_h,
+                q_flux=q_i,
+                h_fg=sat.h_fg,
+                rho_f=sat.rho_f,
+                rho_g=sat.rho_g,
+                mu_f=sat.mu_f,
+                cp_f=sat.cp_f,
+                k_f=sat.k_f,
+                Pr_f=sat.Pr_f,
+            )
+            T_wall = sat.T_sat + q_i / h_tp
+            h_eff = h_tp
+            q_onb_val: float | None = None
+            q_chf_val: float | None = None
+            chf_checked = False
+            validation_status = (
+                "UNVALIDATED — test skipped (Collier & Thome 3e)"
+            )
+
+            if geometry.D_h * 1000 < 3.0 or geometry.D_h * 1000 > 25.0:
+                violations.append(
+                    f"D_h={geometry.D_h*1000:.2f} mm outside "
+                    f"Kandlikar 3-25 mm range"
+                )
+
+        else:
+            # Subcooled: compute single-phase HTC
+            Re_clamped = max(Re, 2300.1)
+            Nu_sp = dittus_boelter(Re_clamped, liq.Pr, n=0.4)
+            h_sp = Nu_sp * liq.k / geometry.D_h
+
+            if Re < 10_000.0:
+                violations.append(
+                    f"Re={Re:.0f} < 10000 — Dittus-Boelter "
+                    f"out-of-envelope (laminar)"
+                )
+
+            T_w_sp = liq.T + q_i / h_sp
+            delta_T_sat = T_w_sp - sat.T_sat
+            P_bar = P_march / 1e5
+
+            # ONB detection via intersection of SP line with BR curve
+            if delta_T_sat > 0.0:
+                T_w_onb = _find_onb_wall_temp(P_bar, h_sp, liq.T, sat.T_sat)
+                q_onb_local = h_sp * (T_w_onb - liq.T)
+                is_boiling = q_i >= q_onb_local
+            else:
+                T_w_onb = sat.T_sat
+                q_onb_local = None
+                is_boiling = False
+
+            if is_boiling:
+                # SUBCOOLED BOILING — BR partial boiling interpolation
+                regime = Regime.SUBCOOLED_BOILING
+                correlation_name = "Bergles-Rohsenow partial boiling"
+
+                # q_onb for the interpolation = BR at the ONB superheat
+                q_onb_br = bergles_rohsenow_curve(
+                    P_bar, T_w_onb - sat.T_sat
+                )
+
+                T_wall = _solve_partial_boiling(
+                    q_i, h_sp, liq.T, sat.T_sat,
+                    P_bar, q_onb_br, T_w_onb,
+                )
+                h_eff = (
+                    q_i / (T_wall - liq.T)
+                    if T_wall > liq.T
+                    else float("inf")
+                )
+                q_onb_val = q_onb_local
+                q_chf_val = q_chf_channel
+                chf_checked = True
+                validation_status = (
+                    "UNVALIDATED — partial boiling interpolation; "
+                    "FDB asymptote approximated by BR incipience curve"
+                )
+
+                if q_i >= q_chf_channel:
+                    raise CHFExceededError(i, q_i, q_chf_channel)
+            else:
+                # SINGLE-PHASE
+                regime = Regime.SINGLE_PHASE
+                correlation_name = "Dittus-Boelter"
+
+                T_wall = T_w_sp
+                h_eff = h_sp
+                q_onb_val = q_onb_local
+                q_chf_val = None
+                chf_checked = False
+                validation_status = "validated (Incropera 7e Ex 8.6)"
+
+        # Pressure drop — single-phase only
+        if regime == Regime.SINGLE_PHASE:
+            f = _petukhov_friction(max(Re, 3000.1))
+            dp = f * (dz / geometry.D_h) * (G**2 / (2.0 * liq.rho))
+            pressure_drop: float | None = dp
+        else:
+            pressure_drop = None
+
+        cells.append(
+            CellResult(
+                z=z_center,
+                T_bulk=liq.T,
+                T_wall=T_wall,
+                T_sat=sat.T_sat,
+                x_eq=x_eq,
+                h_bulk=h_march,
+                regime=regime,
+                correlation=correlation_name,
+                h_eff=h_eff,
+                q_applied=q_i,
+                q_onb=q_onb_val,
+                q_chf=q_chf_val,
+                chf_checked=chf_checked,
+                envelope_violations=tuple(violations),
+                validation_status=validation_status,
+                pressure_drop=pressure_drop,
+            )
+        )
+
+        # Update state for next cell
+        h_march = h_march + q_i * geometry.P_heated * dz / (G * geometry.A_flow)
+        if pressure_drop is not None:
+            P_march = P_march - pressure_drop
+        # else: P unchanged (two-phase dp not implemented)
+
+    # --- Aggregate results ---
+    cells_tuple = tuple(cells)
+    cells_no_dp = sum(1 for c in cells_tuple if c.pressure_drop is None)
+    total_dp: float | None
+    if cells_no_dp > 0:
+        total_dp = None
+    else:
+        total_dp = sum(c.pressure_drop for c in cells_tuple)  # type: ignore[arg-type]
+
+    boiling_cells = [
+        c for c in cells_tuple if c.regime != Regime.SINGLE_PHASE
+    ]
+    cells_unchecked_chf = sum(
+        1 for c in boiling_cells if not c.chf_checked
+    )
+    chf_fully = len(boiling_cells) == 0 or all(
+        c.chf_checked for c in boiling_cells
+    )
+
+    # Energy balance verification (should be ~machine epsilon)
+    total_heat = sum(q_i * geometry.P_heated * dz for q_i in q)
+    expected_dh = total_heat / (G * geometry.A_flow)
+    actual_dh = h_march - h_in
+    energy_error = abs(actual_dh - expected_dh) / max(abs(expected_dh), 1e-30)
+
+    return ChannelResult(
+        cells=cells_tuple,
+        total_pressure_drop=total_dp,
+        cells_without_pressure_drop=cells_no_dp,
+        cells_with_unchecked_chf=cells_unchecked_chf,
+        chf_fully_checked=chf_fully,
+        energy_balance_error=energy_error,
+    )

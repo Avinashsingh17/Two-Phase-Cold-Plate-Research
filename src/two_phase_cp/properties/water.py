@@ -1,4 +1,4 @@
-"""CoolProp wrapper for water saturation properties.
+"""CoolProp wrapper for water saturation and subcooled properties.
 
 This module isolates all CoolProp calls behind a thin interface so that
 correlation functions remain pure numerical functions with no hidden
@@ -14,6 +14,41 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import CoolProp.CoolProp as CP
+
+
+@dataclass(frozen=True)
+class LiquidState:
+    """Liquid water properties at a specified (P, h) state.
+
+    Used for subcooled property evaluation where T < T_sat and properties
+    depend on local temperature, not just saturation conditions.
+    """
+
+    P: float  # Pa
+    T: float  # K
+    h: float  # J/kg
+    rho: float  # kg/m^3
+    mu: float  # Pa·s
+    cp: float  # J/(kg·K)
+    k: float  # W/(m·K)
+    Pr: float  # dimensionless
+
+
+def liquid_state_at_Ph(P: float, h: float) -> LiquidState:
+    """Return liquid water properties at pressure *P* [Pa] and enthalpy *h* [J/kg].
+
+    For subcooled liquid states where properties depend on (P, T),
+    not just saturation conditions.  Sequential cell march uses this
+    to evaluate mu, k, Pr at the local bulk temperature.
+    """
+    fluid = "Water"
+    T = CP.PropsSI("T", "P", P, "H", h, fluid)
+    rho = CP.PropsSI("D", "P", P, "H", h, fluid)
+    mu = CP.PropsSI("V", "P", P, "H", h, fluid)
+    cp = CP.PropsSI("C", "P", P, "H", h, fluid)
+    k = CP.PropsSI("L", "P", P, "H", h, fluid)
+    Pr = CP.PropsSI("Prandtl", "P", P, "H", h, fluid)
+    return LiquidState(P=P, T=T, h=h, rho=rho, mu=mu, cp=cp, k=k, Pr=Pr)
 
 
 @dataclass(frozen=True)
