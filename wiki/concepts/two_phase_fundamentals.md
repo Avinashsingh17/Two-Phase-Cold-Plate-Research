@@ -59,6 +59,8 @@ As quality x increases along a heated channel, the flow structure evolves:
 
 ## Key Dimensionless Groups
 
+For a deeper treatment — naming collisions, the superposition assembly forms, and the two distinct failure modes of correlations — see [[correlation_anatomy]].
+
 | Group | Definition | Physical meaning |
 |-------|-----------|-----------------|
 | **Boiling number** Bo | q″ / (G·h_fg) | Ratio of evaporation rate to mass flux |
@@ -96,6 +98,7 @@ This concept page is the foundational reference for the project's physics. Every
 
 ## Cross-References
 
+- [[correlation_anatomy]]
 - [[CHF_correlations]]
 - [[RPI_wall_boiling_model]]
 - [[motivation_for_CFD_approach]]
