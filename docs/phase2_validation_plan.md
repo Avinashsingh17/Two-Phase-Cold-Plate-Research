@@ -1,6 +1,6 @@
 ---
 title: "CFD Validation Plan (phase2_validation_plan)"
-last_updated: 2026-06-01
+last_updated: 2026-06-05
 status: skeleton — open items marked EXTRACT must be filled from the source papers before Fluent setup begins
 gates: no design exploration until both stages below pass and are documented in wiki/synthesis/validation_status.md
 ---
@@ -45,6 +45,16 @@ radial, if attempted) void-fraction profile.
 **Working fluid:** R-12. **Solver in paper:** CFX. **Our solver:** Fluent — so
 this is also a solver-translation check, not a pure replication.
 
+**Geometry (resolved):** vertical heated tube, ID 19.2 mm, heated length
+3.5 m, R-12, G = 2000–3000 kg/m²·s, system pressure 1.46–2.62 MPa. Radial
+profiles (void fraction, velocity, temperature) measured at end of heated
+length. CLAUDE.md previously said "vertical annulus" — corrected to "vertical
+tube" in this commit.
+
+**Mesh approach:** quasi-2D axisymmetric sector (azimuthal symmetry of the
+round tube). This is the simplest geometry that exercises the full RPI closure
+set, which is the point of Stage 1.
+
 **EXTRACT:** confirm RPI sub-model correspondence between CFX and Fluent
 (wall-partitioning, bubble departure diameter, nucleation site density model) —
 this is where D3 (IMECE 2024, VOF-vs-RPI in Fluent) becomes required reading.
@@ -55,14 +65,6 @@ calibrated per pressure level. Treat it as the one legitimate calibration lever;
 everything else should fall out of the physics. (This is the same discipline as
 exposing correlation calibration coefficients as kwargs — calibrate openly
 against data, don't bury fitted constants.)
-
-> **CONFLICT (resolve from the paper):** Your own docs disagree on DEBORA's
-> geometry. CLAUDE.md registry says *vertical annulus*; plain_language_explanation.md
-> says *vertical tube*. Published DEBORA is, to my knowledge, a vertical heated
-> tube — but I am not certain enough to overwrite your registry. Resolve by
-> reading Krepper & Rzehak 2011 §experimental setup and correct whichever doc is
-> wrong. This matters: the mesh and boundary-condition topology differ between
-> the two.
 
 **Success criterion:** EXTRACT from paper — match wall-superheat curve and
 void-fraction profile within the experimental uncertainty Krepper & Rzehak
@@ -79,15 +81,15 @@ in validation_status.md.
 wide × 713 µm deep, copper block 1 cm × 4.48 cm, DI water, saturated flow
 boiling.
 
-**Operating envelope (EXTRACT — do not invent):**
+**Operating envelope:**
 
 | Parameter | Value | Source |
 |-----------|-------|--------|
-| Mass flux G | EXTRACT range | Qu & Mudawar 2003 Table __ |
-| Inlet subcooling / inlet temperature | EXTRACT | Qu & Mudawar 2003 Table __ |
-| System pressure | EXTRACT | Qu & Mudawar 2003 §__ |
-| Heat flux q″ range and basis (channel-base vs. footprint — reconcile to the wiki's device-heat-flux convention) | EXTRACT | Qu & Mudawar 2003 Table __ |
-| Exit quality x_eq range | EXTRACT | Qu & Mudawar 2003 Table __ |
+| Mass flux G | 134.9–400.1 kg/m²·s | Qu & Mudawar 2003 test matrix |
+| Inlet temperature T_in | 30.0 and 60.0 °C | Qu & Mudawar 2003 test matrix |
+| Outlet pressure P_out | 1.17 bar | Qu & Mudawar 2003 test conditions |
+| Heat flux q″ range | EXTRACT from Figs 5–6; basis = effective heat flux on heat-sink top (footprint) area, which is the device heat flux per wiki convention | Qu & Mudawar 2003 Figs 5–6 |
+| Exit quality x_eq range | EXTRACT from Figs 5–6 | Qu & Mudawar 2003 Figs 5–6 |
 
 **What to reproduce:** Nu and pressure drop vs. Re, and the two-phase
 performance map — including the HTC-decreases-with-quality trend that every
@@ -120,19 +122,38 @@ Therefore the envelope extraction above is what scopes the gap-filling:
   asymptote is actually exercised — i.e. how wrong the BR stand-in is allowed
   to be before it corrupts the sanity-check.
 
+**Sharpened result (2026-06-05).** With the envelope partially filled, neither
+logged gap binds Stage 2:
+
+* **Saturated CHF (Katto-Ohno):** Qu & Mudawar's experiments do not approach
+  CHF — they terminate at moderate exit qualities well below burnout. The
+  saturated-CHF gap remains a flag-only safety boundary, not a precision
+  requirement for the benchmark comparison.
+* **FDB asymptote (BR stand-in):** The Qu & Mudawar operating envelope is
+  saturated convective-dominant, not nucleate-dominant — the regime where the
+  FDB curve matters least.
+* **Structural limit:** The 1D model cannot reproduce the h_tp-decreases-with-
+  quality trend by construction, because it is built from the superposition
+  correlations that Qu & Mudawar 2003 invalidated (see correlation_anatomy §4b).
+  The 1D model's role at Stage 2 conditions is pre-flight sanity check
+  (magnitude, regime transitions, CHF margin), not trend reproduction — that is
+  CFD's job.
+
 The 1D model is not gated to reproduce the benchmark within experimental
 uncertainty — that is CFD's job. The 1D model's job is to run cleanly at the
 benchmark conditions as a cheap pre-flight sanity check before expensive CFD,
 and to do so it must at minimum not be grossly wrong in the regimes the
-benchmark exercises. Extracting the envelope is what turns "the gaps are bad in
-the abstract" into "the gaps must be this good, at these conditions."
+benchmark exercises.
 
 ---
 
 ## 4. Open items to resolve before touching Fluent
 
-1. **EXTRACT** all operating-envelope numbers (§1, §2) from the source papers.
-2. **Resolve** the DEBORA tube/annulus CONFLICT (§1).
+1. **EXTRACT** remaining operating-envelope numbers: §1 success criterion
+   (experimental uncertainty); §2 q″ magnitude and x_e max from Figs 5–6.
+   G, T_in, P_out now filled; DEBORA geometry now filled.
+2. ~~**Resolve** the DEBORA tube/annulus CONFLICT (§1).~~ **RESOLVED** —
+   vertical tube, ID 19.2 mm. CLAUDE.md corrected in this commit.
 3. **ANSYS license check** — confirm Fluent multiphase + RPI wall-boiling are
    in the OU academic license before committing to the E-E path.
    PROJECT_CONTEXT flags this as unconfirmed. If unavailable, the

@@ -136,7 +136,7 @@ change and offer to update the affected communication artifacts.
 
 Stage 1 — RPI shakedown:
   **Krepper & Rzehak 2011**, DEBORA case (subcooled boiling, R12 refrigerant,
-  vertical annulus). Reproduces wall-superheat vs. heat-flux curve and axial
+  vertical tube (ID 19.2 mm, L_h 3.5 m)). Reproduces wall-superheat vs. heat-flux curve and axial
   void-fraction profile. Gate for RPI model setup.
 
 Stage 2 — Cold plate geometry:
