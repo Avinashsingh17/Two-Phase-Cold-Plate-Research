@@ -17,6 +17,13 @@ from two_phase_cp.correlations import (
     kandlikar_1990,
     sieder_tate,
 )
+from two_phase_cp.correlations.boiling import (
+    KANDLIKAR_F_FL,
+    _chen_F,
+    _chen_S,
+    _forster_zuber,
+    _lockhart_martinelli_Xtt,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -133,27 +140,143 @@ def test_bergles_rohsenow_monotonicity():
 # Chen 1966 — Collier & Thome 3e reference
 # ---------------------------------------------------------------------------
 
-@pytest.mark.skip(reason="awaiting Collier & Thome 3e Ch 7 reference value")
 def test_chen_1966_collier_thome():
-    """Chen (1966) validated against Collier & Thome 3e, Chapter 7.
+    """Chen (1966) vs Collier & Thome 2e, Ch 7, Example 1 (pp 244-246).
 
-    TODO: Transcribe worked example conditions and expected h_tp from
-    Collier & Thome, *Convective Boiling and Condensation*, 3rd ed.
-    Tolerance: ±5%.
+    Water, 1.186 bar, D=12.7 mm, G=298 kg/m²s, x=0.05.
+
+    Tier 1 (~2%): Feed Collier's stated F=4.25, S=0.435, and explicit
+    Δp_sat from steam tables.  Tests Dittus-Boelter h_l, Forster-Zuber
+    h_FZ, and assembly (h_TP = F*h_l + S*h_FZ) in isolation from the
+    Butterworth chart-fit error in F and S.
+
+    Tier 2 (~5%): Let the Butterworth algebraic fits compute F and S from
+    the Lockhart-Martinelli parameter; assert against Collier's graphical
+    read (F=4.25 at 1/X_tt=1.946, S=0.435 at Re_TP=80480).
+
+    Note: the implementation computes Δp_sat via Clausius-Clapeyron by
+    default; Tier 1 bypasses CC by calling _forster_zuber directly with
+    Collier's explicit Δp_sat values.  CC diverges at higher ΔT_sat
+    (up to 27% at ΔT=22.2 K) — this is expected (linear vs exponential).
     """
-    pass
+    # --- Collier's stated properties (all SI) ---
+    mu_f = 2.725e-4   # Pa·s
+    mu_g = 1.365e-5   # Pa·s
+    k_f = 0.683       # W/(m·K)
+    cp_f = 4210.0     # J/(kg·K)
+    rho_f = 955.0     # kg/m³
+    rho_g = 0.691     # kg/m³
+    sigma = 0.058     # N/m
+    h_fg = 2.245e6    # J/kg
+    G = 298.0         # kg/(m²·s)
+    D = 0.0127        # m (12.7 mm)
+    x = 0.05
+    Pr_f = mu_f * cp_f / k_f  # 1.68
+
+    F_collier = 4.25
+    S_collier = 0.435
+
+    # --- Tier 1: assembly with given F, S, and explicit Δp_sat ---
+
+    # h_l from Dittus-Boelter on liquid-only flow
+    Re_l = G * (1 - x) * D / mu_f
+    Nu_l = dittus_boelter(Re_l, Pr_f, n=0.4)
+    h_l = Nu_l * k_f / D
+    h_c = F_collier * h_l  # enhanced convective HTC
+    assert h_c == pytest.approx(12_850, rel=0.02)
+
+    # Three (ΔT_sat, Δp_sat) points; h_NcB = S * h_FZ (suppressed nucleate)
+    #   (delta_T [K], delta_P [Pa], h_NcB [W/m²K], h_TP [W/m²K], phi [W/m²])
+    collier_points = [
+        (2.78,  1.184e4,  1_030, 13_880,  38_600),
+        (11.1,  5.355e4,  4_460, 17_310, 192_000),
+        (22.2,  1.258e5,  9_940, 22_790, 506_000),
+    ]
+    for delta_T, delta_P, h_NcB_exp, h_TP_exp, phi_exp in collier_points:
+        h_FZ = _forster_zuber(
+            delta_T, delta_P, rho_f, rho_g, mu_f, h_fg, sigma, cp_f, k_f,
+        )
+        h_NcB = S_collier * h_FZ
+        h_TP = h_c + h_NcB
+        phi = h_TP * delta_T
+
+        assert h_NcB == pytest.approx(h_NcB_exp, rel=0.02), (
+            f"h_NcB at ΔT={delta_T}: {h_NcB:.1f} vs {h_NcB_exp}"
+        )
+        assert h_TP == pytest.approx(h_TP_exp, rel=0.02), (
+            f"h_TP at ΔT={delta_T}: {h_TP:.1f} vs {h_TP_exp}"
+        )
+        assert phi == pytest.approx(phi_exp, rel=0.02), (
+            f"phi at ΔT={delta_T}: {phi:.1f} vs {phi_exp}"
+        )
+
+    # --- Tier 2: Butterworth algebraic fits for F and S ---
+    #
+    # The ~2.5% gap on F and ~1.7% gap on S are inherent to Butterworth's
+    # algebraic curve-fits vs Collier's graphical chart reads.  These
+    # tolerances must NOT be tightened — the gap is in the fit, not in our
+    # code.
+
+    X_tt = _lockhart_martinelli_Xtt(x, rho_f, rho_g, mu_f, mu_g)
+    F = _chen_F(X_tt)
+    assert 1.0 / X_tt == pytest.approx(1.946, rel=0.01)
+    assert F == pytest.approx(4.25, rel=0.05), (
+        f"F={F:.3f} vs Collier 4.25 (Butterworth fit vs graphical read)"
+    )
+
+    Re_TP = Re_l * F**1.25
+    S = _chen_S(Re_TP)
+    assert S == pytest.approx(0.435, rel=0.05), (
+        f"S={S:.4f} vs Collier 0.435 (Butterworth fit vs graphical read)"
+    )
 
 
 # ---------------------------------------------------------------------------
 # Kandlikar 1990 — Collier & Thome 3e reference
 # ---------------------------------------------------------------------------
 
-@pytest.mark.skip(reason="awaiting Collier & Thome 3e reference value")
-def test_kandlikar_water_collier_thome():
-    """Kandlikar (1990) validated against Collier & Thome 3e worked example.
+def test_kandlikar_f_fl_table_4():
+    """KANDLIKAR_F_FL matches Kandlikar (1990) Table 4 for verified fluids.
 
-    TODO: Transcribe worked example conditions and expected h_tp from
-    Collier & Thome, *Convective Boiling and Condensation*, 3rd ed.
+    Source: Kandlikar, "A General Correlation for Saturated Two-Phase Flow
+    Boiling Heat Transfer Inside Horizontal and Vertical Tubes", Table 4.
+    R-134a excluded — not in the 1990 paper (likely from Kandlikar 1999
+    Handbook; value unverified).
+    """
+    # Kandlikar 1990 Table 4: fluid-dependent parameter F_fl
+    table_4 = {
+        "water": 1.00,
+        "R-11": 1.30,
+        "R-12": 1.50,
+        "R-13B1": 1.31,
+        "R-22": 2.20,
+        "R-113": 1.30,
+        "R-114": 1.24,
+        "R-152a": 1.10,
+        "nitrogen": 4.70,
+        "neon": 3.50,
+    }
+    for fluid, expected in table_4.items():
+        actual = KANDLIKAR_F_FL[fluid]
+        assert actual == expected, (
+            f"F_fl[{fluid!r}]: got {actual}, expected {expected}"
+        )
+
+
+@pytest.mark.skip(
+    reason=(
+        "Kandlikar 1990 provides no worked example with stated intermediates "
+        "(Co, Bo, h_NBD, h_CBD, h_TP); only aggregate deviation statistics "
+        "(Table 5) and h_TP-vs-x plots requiring log-scale digitization. "
+        "Un-skip via Kandlikar 1999 Handbook worked example (preferred) or "
+        "loose-tolerance digitization of the Fig. 6 prediction curve."
+    )
+)
+def test_kandlikar_water_collier_thome():
+    """Kandlikar (1990) validated against a reference worked example.
+
+    TODO: Source a worked example with stated intermediates (Co, Bo, h_lo,
+    h_NBD, h_CBD, h_TP) from Kandlikar 1999 Handbook or Collier & Thome 3e.
     Tolerance: ±5%.
     """
     pass

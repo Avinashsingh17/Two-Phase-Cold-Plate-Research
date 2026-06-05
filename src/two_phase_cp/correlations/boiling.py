@@ -210,9 +210,10 @@ KANDLIKAR_F_FL: dict[str, float] = {
     "R-22": 2.20,
     "R-113": 1.30,
     "R-114": 1.24,
-    "R-134a": 1.63,
+    "R-134a": 1.63,  # SOURCE UNVERIFIED — not in Kandlikar 1990 Table 4; verify against Kandlikar 1999 Handbook before relying on
     "R-152a": 1.10,
     "nitrogen": 4.70,
+    "neon": 3.50,
 }
 
 
