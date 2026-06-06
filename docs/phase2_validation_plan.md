@@ -85,11 +85,26 @@ boiling.
 
 | Parameter | Value | Source |
 |-----------|-------|--------|
-| Mass flux G | 134.9–400.1 kg/m²·s | Qu & Mudawar 2003 test matrix |
-| Inlet temperature T_in | 30.0 and 60.0 °C | Qu & Mudawar 2003 test matrix |
-| Outlet pressure P_out | 1.17 bar | Qu & Mudawar 2003 test conditions |
-| Heat flux q″ range | EXTRACT from Figs 5–6; basis = effective heat flux on heat-sink top (footprint) area, which is the device heat flux per wiki convention | Qu & Mudawar 2003 Figs 5–6 |
-| Exit quality x_eq range | EXTRACT from Figs 5–6 | Qu & Mudawar 2003 Figs 5–6 |
+| Mass flux G | 135–402 kg/m²·s | Qu & Mudawar 2003, abstract + Table 2 |
+| Inlet temperature T_in | 30 and 60 °C | Qu & Mudawar 2003, test matrix |
+| Outlet pressure P_out | 1.17 bar | Qu & Mudawar 2003, test conditions |
+| Heat flux q″_eff | ~30–120 W/cm² (approximate, figure-read from Fig. 5) | Qu & Mudawar 2003, Fig. 5 (T_in=60 °C, G=255 kg/m²·s series) |
+| Exit quality x_e | 0–0.20 | Qu & Mudawar 2003, p. 2761 (tests terminated at x_e ≈ 0.2); Fig. 6 axes confirm |
+| h_tp range | 20–45 kW/m²·K | Qu & Mudawar 2003, p. 2763 (stated) |
+
+**Heat-flux basis (important).** q″_eff = P_W / A_t, where A_t is the top
+planform area 1.0 × 4.48 cm² (Eq. 1, p. 2761). This equals device heat flux
+per our wiki convention — no conversion needed. The paper also defines q″_ch
+(channel-perimeter basis, Eq. 9), used only for their boiling number; do not
+conflate with q″_eff.
+
+**Upper q″ bound.** The paper states no tabulated peak q″_eff. The ~120 W/cm²
+upper bound is set by the x_e ≈ 0.2 test-termination criterion (p. 2761), not
+a stated flux ceiling. Mark as approximate in any comparison.
+
+**Inlet state.** Subcooled: T_in = 30 and 60 °C vs. T_sat ≈ 105 °C at P_out =
+1.17 bar. Regime span across a single test run: subcooled inlet → x_e = 0
+(saturation) → saturated flow boiling to x_e ≈ 0.2.
 
 **What to reproduce:** Nu and pressure drop vs. Re, and the two-phase
 performance map — including the HTC-decreases-with-quality trend that every
