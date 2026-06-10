@@ -53,24 +53,74 @@ def test_dittus_boelter_incropera_7e_ex8_6_cooling():
 
 
 # ---------------------------------------------------------------------------
-# Gnielinski — awaiting textbook reference (likely Çengel & Ghajar Ch 8)
+# Gnielinski — Çengel & Ghajar (2025), Ch 8, Example 8-5
 # ---------------------------------------------------------------------------
-# Incropera's worked examples use Dittus-Boelter (Eq 8.60), not Gnielinski.
-# No Gnielinski textbook reference value is available yet.
+# "Heating of Water by Resistance Heaters in a Tube"
+# Water at T_b = 40 °C, D = 0.03 m, V_avg = 0.236 m/s.
+# Properties from textbook (not CoolProp): ρ = 992.1, k = 0.631,
+# ν = 0.658e-6, c_p = 4179, Pr = 4.32.
+#
+# Book inconsistency (documented): Çengel prints f = 0.0314, Nu = 69.4,
+# h = 1460. These are mutually inconsistent — f = 0.0314 fed into the
+# Gnielinski formula gives Nu = 71.5, not 69.4. The printed Nu = 69.4
+# is consistent with f ≈ 0.0301 (near Colebrook smooth-tube, 0.0303),
+# not the Petukhov first-form (0.0308) and not the printed 0.0314.
+# The printed f = 0.0314 is corrupt and is NOT asserted against.
 
-@pytest.mark.skip(reason="no Incropera Gnielinski worked example exists — awaiting reference (likely Çengel & Ghajar Ch 8)")
-def test_gnielinski_textbook():
-    """Gnielinski validated against a textbook worked example.
+def test_gnielinski_cengel_ghajar_ex8_5():
+    """Gnielinski vs Çengel & Ghajar (2025), Ch 8, Example 8-5.
 
-    TODO: Source a worked example that uses the Gnielinski correlation
-    (not Dittus-Boelter). Inputs (Re=14050, Pr=4.85) preserved for
-    future activation once an expected Nu value is available.
+    Tier 1 (independent check, ~1%): validates the Gnielinski assembly and
+    h-from-Nu against the book's result (Nu = 69.4, h = 1460), using the
+    f value (0.0301) that is consistent with Çengel's own Nu/h — NOT the
+    corrupt printed f = 0.0314.
+
+    Tier 2 (implementation form, ~2%): validates the code's self-consistent
+    Petukhov-chain (f = 0.03084 → Nu = 70.6 → h = 1485). This differs
+    from Çengel's printed Nu = 69.4 by +1.7% because Çengel Example 8-5
+    is internally inconsistent — printed f = 0.0314 regenerates neither
+    the Petukhov formula (0.0308) nor Çengel's own Nu (which requires
+    f ≈ 0.0301, near Colebrook smooth-tube).
     """
-    Re = 14_050.0
-    Pr = 4.85
-    Nu = gnielinski(Re, Pr)
-    # TODO: replace with verified textbook value
-    assert Nu == pytest.approx(..., rel=0.01)
+    # Çengel's stated inputs
+    D = 0.03       # m
+    V_avg = 0.236  # m/s
+    nu = 0.658e-6  # m²/s  (kinematic viscosity)
+    k = 0.631      # W/(m·K)
+    Pr = 4.32
+
+    Re = V_avg * D / nu  # = 10760
+    assert Re == pytest.approx(10_760, rel=0.01)
+
+    # --- Tier 1: independent check against Çengel's Nu/h result ---
+
+    # 1a. Gnielinski assembly with f = 0.0301 (reverse-solved from Çengel's
+    #     own Nu = 69.4; closest standard form: Colebrook smooth = 0.0303).
+    Nu_t1 = gnielinski(Re, Pr, f=0.0301)
+    assert Nu_t1 == pytest.approx(69.4, rel=0.01), (
+        f"Tier 1 Nu: {Nu_t1:.2f} vs Çengel 69.4"
+    )
+
+    # 1b. h = k·Nu/D — pure arithmetic, independent of f choice.
+    h_t1 = k * Nu_t1 / D
+    assert h_t1 == pytest.approx(1460, rel=0.01), (
+        f"Tier 1 h: {h_t1:.1f} vs Çengel 1460"
+    )
+
+    # --- Tier 2: code's Petukhov-chain (implementation form) ---
+
+    # Code uses f = (0.790 ln Re − 1.64)⁻² (Petukhov first-form).
+    # At Re = 10,760 this gives f = 0.03084, which forward-chains to
+    # Nu = 70.6, h = 1485 — +1.7% above Çengel's Nu/h due to the
+    # Petukhov vs Colebrook f difference (0.0308 vs 0.0301).
+    Nu_t2 = gnielinski(Re, Pr)  # f computed internally via Petukhov
+    h_t2 = k * Nu_t2 / D
+    assert Nu_t2 == pytest.approx(70.6, rel=0.02), (
+        f"Tier 2 Nu: {Nu_t2:.2f} vs Petukhov-chain 70.6"
+    )
+    assert h_t2 == pytest.approx(1485, rel=0.02), (
+        f"Tier 2 h: {h_t2:.1f} vs Petukhov-chain 1485"
+    )
 
 
 # ---------------------------------------------------------------------------
