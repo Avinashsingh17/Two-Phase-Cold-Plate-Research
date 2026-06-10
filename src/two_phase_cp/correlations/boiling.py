@@ -202,18 +202,27 @@ chen_1966.envelope = CorrelationEnvelope(  # type: ignore[attr-defined]
 # Kandlikar 1990
 # ---------------------------------------------------------------------------
 
+# F_fl is fluid-SURFACE specific. Listed values are for copper/commercial
+# tubing. For stainless steel, use F_fl = 1.0 for all fluids.
+# [Kandlikar/Shoji/Dhir, Handbook of Phase Change, 1999, Ch. 15 (Kandlikar),
+#  Table 3 footnote]
 KANDLIKAR_F_FL: dict[str, float] = {
-    "water": 1.00,
-    "R-11": 1.30,
-    "R-12": 1.50,
-    "R-13B1": 1.31,
-    "R-22": 2.20,
-    "R-113": 1.30,
-    "R-114": 1.24,
-    "R-134a": 1.63,  # SOURCE UNVERIFIED — not in Kandlikar 1990 Table 4; verify against Kandlikar 1999 Handbook before relying on
-    "R-152a": 1.10,
-    "nitrogen": 4.70,
-    "neon": 3.50,
+    # --- Kandlikar 1990 Table 4 AND Handbook 1999 Table 3 ---
+    "water": 1.00,       # Kandlikar 1990, Table 4
+    "R-11": 1.30,        # Kandlikar 1990, Table 4
+    "R-12": 1.50,        # Kandlikar 1990, Table 4
+    "R-13B1": 1.31,      # Kandlikar 1990, Table 4
+    "R-22": 2.20,        # Kandlikar 1990, Table 4
+    "R-113": 1.30,       # Kandlikar 1990, Table 4
+    "R-114": 1.24,       # Kandlikar 1990, Table 4
+    "R-152a": 1.10,      # Kandlikar 1990, Table 4
+    # --- Kandlikar 1990 Table 4 only (not in Handbook Table 3) ---
+    "nitrogen": 4.70,    # Kandlikar 1990, Table 4
+    "neon": 3.50,        # Kandlikar 1990, Table 4
+    # --- Handbook 1999 Table 3 only (copper/commercial tubing) ---
+    "R-134a": 1.63,      # Kandlikar/Shoji/Dhir 1999, Handbook Ch. 15, Table 3
+    "R-32/R-125": 0.488, # Kandlikar/Shoji/Dhir 1999, Handbook Ch. 15, Table 3 (60/40 wt% azeotrope)
+    "kerosene": 3.30,    # Kandlikar/Shoji/Dhir 1999, Handbook Ch. 15, Table 3
 }
 
 

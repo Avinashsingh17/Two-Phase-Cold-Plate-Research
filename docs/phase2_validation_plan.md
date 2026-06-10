@@ -1,7 +1,7 @@
 ---
 title: "CFD Validation Plan (phase2_validation_plan)"
-last_updated: 2026-06-05
-status: skeleton — open items marked EXTRACT must be filled from the source papers before Fluent setup begins
+last_updated: 2026-06-09
+status: skeleton — §2 envelope filled; §1 success criterion still EXTRACT
 gates: no design exploration until both stages below pass and are documented in wiki/synthesis/validation_status.md
 ---
 
@@ -79,7 +79,9 @@ in validation_status.md.
 
 **Geometry (locked, from wiki):** 21 parallel rectangular channels, 231 µm
 wide × 713 µm deep, copper block 1 cm × 4.48 cm, DI water, saturated flow
-boiling.
+boiling. Channel depth: 713 µm per abstract and Table 3; body text p. 2757
+states 712 µm — 1 µm internal inconsistency in the paper, noted but
+non-material. We use 713 µm (abstract value).
 
 **Operating envelope:**
 
@@ -105,6 +107,11 @@ a stated flux ceiling. Mark as approximate in any comparison.
 **Inlet state.** Subcooled: T_in = 30 and 60 °C vs. T_sat ≈ 105 °C at P_out =
 1.17 bar. Regime span across a single test run: subcooled inlet → x_e = 0
 (saturation) → saturated flow boiling to x_e ≈ 0.2.
+
+**Quality regime scoping.** x_e max ≈ 0.2 means Stage 2 stays in the
+low-quality saturated/annular regime and never approaches dryout — consistent
+with the finding (§3 below) that saturated-CHF (Katto-Ohno) is flag-only for
+Stage 2.
 
 **What to reproduce:** Nu and pressure drop vs. Re, and the two-phase
 performance map — including the HTC-decreases-with-quality trend that every
@@ -165,8 +172,9 @@ benchmark exercises.
 ## 4. Open items to resolve before touching Fluent
 
 1. **EXTRACT** remaining operating-envelope numbers: §1 success criterion
-   (experimental uncertainty); §2 q″ magnitude and x_e max from Figs 5–6.
-   G, T_in, P_out now filled; DEBORA geometry now filled.
+   (experimental uncertainty). §2 envelope now fully filled (G, T_in, P_out,
+   q″_eff, x_e, h_tp, channel depth, heat-flux basis); DEBORA geometry
+   now filled.
 2. ~~**Resolve** the DEBORA tube/annulus CONFLICT (§1).~~ **RESOLVED** —
    vertical tube, ID 19.2 mm. CLAUDE.md corrected in this commit.
 3. **ANSYS license check** — confirm Fluent multiphase + RPI wall-boiling are

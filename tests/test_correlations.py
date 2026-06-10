@@ -235,16 +235,17 @@ def test_chen_1966_collier_thome():
 # Kandlikar 1990 — Collier & Thome 3e reference
 # ---------------------------------------------------------------------------
 
-def test_kandlikar_f_fl_table_4():
-    """KANDLIKAR_F_FL matches Kandlikar (1990) Table 4 for verified fluids.
+def test_kandlikar_f_fl_table():
+    """KANDLIKAR_F_FL matches published values from Kandlikar sources.
 
-    Source: Kandlikar, "A General Correlation for Saturated Two-Phase Flow
-    Boiling Heat Transfer Inside Horizontal and Vertical Tubes", Table 4.
-    R-134a excluded — not in the 1990 paper (likely from Kandlikar 1999
-    Handbook; value unverified).
+    Sources:
+    - Kandlikar 1990, Table 4: water through neon (also in Handbook Table 3,
+      except nitrogen and neon which appear only in the 1990 paper).
+    - Kandlikar/Shoji/Dhir 1999, Handbook of Phase Change, Ch. 15 (Kandlikar),
+      Table 3 (copper/commercial tubing): R-134a, R-32/R-125, kerosene.
     """
-    # Kandlikar 1990 Table 4: fluid-dependent parameter F_fl
-    table_4 = {
+    expected = {
+        # Kandlikar 1990 Table 4
         "water": 1.00,
         "R-11": 1.30,
         "R-12": 1.50,
@@ -255,11 +256,15 @@ def test_kandlikar_f_fl_table_4():
         "R-152a": 1.10,
         "nitrogen": 4.70,
         "neon": 3.50,
+        # Handbook 1999 Table 3
+        "R-134a": 1.63,
+        "R-32/R-125": 0.488,
+        "kerosene": 3.30,
     }
-    for fluid, expected in table_4.items():
+    for fluid, exp in expected.items():
         actual = KANDLIKAR_F_FL[fluid]
-        assert actual == expected, (
-            f"F_fl[{fluid!r}]: got {actual}, expected {expected}"
+        assert actual == exp, (
+            f"F_fl[{fluid!r}]: got {actual}, expected {exp}"
         )
 
 
