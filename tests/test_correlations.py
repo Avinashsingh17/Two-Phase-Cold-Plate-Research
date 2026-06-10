@@ -70,18 +70,22 @@ def test_dittus_boelter_incropera_7e_ex8_6_cooling():
 def test_gnielinski_cengel_ghajar_ex8_5():
     """Gnielinski vs Çengel & Ghajar (2025), Ch 8, Example 8-5.
 
-    Tier 1 (independent check, ~1%): validates the Gnielinski assembly and
-    h-from-Nu against the book's result (Nu = 69.4, h = 1460), using the
-    f value (0.0301) that is consistent with Çengel's own Nu/h — NOT the
-    corrupt printed f = 0.0314.
+    Tier 1 (Colebrook f → Gnielinski, ~1%): computes f from the Colebrook
+    smooth-tube equation at this example's Re (no reverse-solve from the
+    target Nu), feeds it into the Gnielinski assembly, and asserts Nu ≈ 69.4
+    and h ≈ 1460 against the book's printed result.  Colebrook f = 0.03029
+    at Re = 10,760 → Nu = 69.7, +0.4% from Çengel's 69.4.
 
-    Tier 2 (implementation form, ~2%): validates the code's self-consistent
-    Petukhov-chain (f = 0.03084 → Nu = 70.6 → h = 1485). This differs
-    from Çengel's printed Nu = 69.4 by +1.7% because Çengel Example 8-5
-    is internally inconsistent — printed f = 0.0314 regenerates neither
-    the Petukhov formula (0.0308) nor Çengel's own Nu (which requires
-    f ≈ 0.0301, near Colebrook smooth-tube).
+    Tier 2 (Petukhov-chain, ~2%): code's default f via Petukhov first-form
+    = 0.03084 → Nu = 70.6 → h = 1485.  This differs from Çengel's printed
+    Nu = 69.4 by +1.7% because Çengel Example 8-5 is internally
+    inconsistent — printed f = 0.0314 regenerates neither the Petukhov
+    formula (0.0308) nor Çengel's own Nu (which requires f ≈ 0.0301, near
+    Colebrook smooth-tube 0.0303).  The printed f = 0.0314 is corrupt and
+    is not asserted against.
     """
+    import math
+
     # Çengel's stated inputs
     D = 0.03       # m
     V_avg = 0.236  # m/s
@@ -92,17 +96,20 @@ def test_gnielinski_cengel_ghajar_ex8_5():
     Re = V_avg * D / nu  # = 10760
     assert Re == pytest.approx(10_760, rel=0.01)
 
-    # --- Tier 1: independent check against Çengel's Nu/h result ---
+    # --- Tier 1: Colebrook f from Re → Gnielinski assembly vs Çengel ---
 
-    # 1a. Gnielinski assembly with f = 0.0301 (reverse-solved from Çengel's
-    #     own Nu = 69.4; closest standard form: Colebrook smooth = 0.0303).
-    Nu_t1 = gnielinski(Re, Pr, f=0.0301)
-    assert Nu_t1 == pytest.approx(69.4, rel=0.01), (
-        f"Tier 1 Nu: {Nu_t1:.2f} vs Çengel 69.4"
-    )
+    # Colebrook smooth-tube (implicit, iterated):
+    #   1/sqrt(f) = -2.0 log10(2.51 / (Re * sqrt(f)))
+    # Computed from Re alone — independent of the target Nu = 69.4.
+    f_col = 0.03  # seed
+    for _ in range(50):
+        f_col = (1.0 / (-2.0 * math.log10(2.51 / (Re * math.sqrt(f_col))))) ** 2
 
-    # 1b. h = k·Nu/D — pure arithmetic, independent of f choice.
+    Nu_t1 = gnielinski(Re, Pr, f=f_col)
     h_t1 = k * Nu_t1 / D
+    assert Nu_t1 == pytest.approx(69.4, rel=0.01), (
+        f"Tier 1 Nu: {Nu_t1:.2f} vs Çengel 69.4 (Colebrook f={f_col:.6f})"
+    )
     assert h_t1 == pytest.approx(1460, rel=0.01), (
         f"Tier 1 h: {h_t1:.1f} vs Çengel 1460"
     )
@@ -112,7 +119,7 @@ def test_gnielinski_cengel_ghajar_ex8_5():
     # Code uses f = (0.790 ln Re − 1.64)⁻² (Petukhov first-form).
     # At Re = 10,760 this gives f = 0.03084, which forward-chains to
     # Nu = 70.6, h = 1485 — +1.7% above Çengel's Nu/h due to the
-    # Petukhov vs Colebrook f difference (0.0308 vs 0.0301).
+    # Petukhov vs Colebrook f difference (0.0308 vs 0.0303).
     Nu_t2 = gnielinski(Re, Pr)  # f computed internally via Petukhov
     h_t2 = k * Nu_t2 / D
     assert Nu_t2 == pytest.approx(70.6, rel=0.02), (
