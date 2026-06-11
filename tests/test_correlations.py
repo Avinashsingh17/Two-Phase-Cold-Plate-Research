@@ -14,8 +14,10 @@ from two_phase_cp.correlations import (
     dittus_boelter,
     gnielinski,
     hall_mudawar_2000,
+    jens_lottes_1951,
     kandlikar_1990,
     sieder_tate,
+    thom_1965,
 )
 from two_phase_cp.correlations.boiling import (
     KANDLIKAR_F_FL,
@@ -375,3 +377,42 @@ def test_hall_mudawar_chf_representative(water_10bar):
     )
     # TODO: replace with validated reference value
     assert q_chf == pytest.approx(..., rel=0.10)
+
+
+# ---------------------------------------------------------------------------
+# Thom et al. 1965 — FDB wall superheat (water)
+# ---------------------------------------------------------------------------
+
+_FDB_SKIP_REASON = (
+    "Pending independent worked (q″, p, ΔT_sat) triple from Collier & "
+    "Thome 2nd ed. or Todreas & Kazimi Nuclear Systems Vol. 1, in stated "
+    "units (MW/m²–bar–K). Do NOT un-skip by evaluating the formula and "
+    "asserting against its own output — that is regression-against-output. "
+    "Un-skip only against an externally published triple."
+)
+
+
+@pytest.mark.skip(reason=_FDB_SKIP_REASON)
+def test_thom_1965_fdb():
+    """Thom et al. (1965) FDB wall superheat validated against a published triple.
+
+    TODO: Source a (q″, p, ΔT_sat) triple from Collier & Thome 2e or
+    Todreas & Kazimi.  Feed q″ in W/m² and P in Pa (SI interface);
+    assert ΔT_sat in K.  Tolerance: ±5%.
+    """
+    pass
+
+
+# ---------------------------------------------------------------------------
+# Jens-Lottes 1951 — FDB wall superheat (water)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.skip(reason=_FDB_SKIP_REASON)
+def test_jens_lottes_1951_fdb():
+    """Jens & Lottes (1951) FDB wall superheat validated against a published triple.
+
+    TODO: Source a (q″, p, ΔT_sat) triple from Collier & Thome 2e or
+    Todreas & Kazimi.  Feed q″ in W/m² and P in Pa (SI interface);
+    assert ΔT_sat in K.  Tolerance: ±5%.
+    """
+    pass

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import math
+
 from two_phase_cp.correlations._envelope import CorrelationEnvelope
 from two_phase_cp.correlations.single_phase import dittus_boelter
 
@@ -325,3 +327,87 @@ kandlikar_1990.envelope = CorrelationEnvelope(  # type: ignore[attr-defined]
     ),
     wiki_page="QuMudawar2003_microchannel_boiling_I",
 )
+
+
+# ---------------------------------------------------------------------------
+# Thom et al. 1965 — FDB wall-superheat correlation (water only)
+# ---------------------------------------------------------------------------
+
+def thom_1965(
+    q_flux: float,
+    P_sat: float,
+) -> float:
+    """Thom et al. (1965) fully-developed boiling wall superheat.
+
+    Returns wall superheat ΔT_sat [K].
+
+    Dimensional form (valid for q″ in MW/m², p in bar, ΔT_sat in K):
+        ΔT_sat = 22.65 · q″^0.5 · exp(−p / 87)
+
+    This function accepts SI inputs (q″ in W/m², P in Pa) and converts
+    internally.  Water only.
+
+    Parameters
+    ----------
+    q_flux : float
+        Heat flux [W/m^2].
+    P_sat : float
+        Saturation pressure [Pa].
+        <!-- TODO: confirm valid pressure range from source -->
+
+    Returns
+    -------
+    float
+        Wall superheat ΔT_sat = T_w − T_sat [K].
+
+    Source: Kandlikar, Shoji & Dhir (1999), *Handbook of Phase Change*,
+    Ch. 15 (Kandlikar), Table 1 (p. 376).  Coefficients 22.65, exponent
+    0.5, and exp denominator 87 bar are from that table.
+    """
+    # --- Unit conversion: SI → dimensional form ---
+    q_MW = q_flux * 1.0e-6       # W/m² → MW/m²
+    p_bar = P_sat * 1.0e-5       # Pa → bar
+
+    return 22.65 * q_MW**0.5 * math.exp(-p_bar / 87.0)
+
+
+# ---------------------------------------------------------------------------
+# Jens-Lottes 1951 — FDB wall-superheat correlation (water only)
+# ---------------------------------------------------------------------------
+
+def jens_lottes_1951(
+    q_flux: float,
+    P_sat: float,
+) -> float:
+    """Jens & Lottes (1951) fully-developed boiling wall superheat.
+
+    Returns wall superheat ΔT_sat [K].
+
+    Dimensional form (valid for q″ in MW/m², p in bar, ΔT_sat in K):
+        ΔT_sat = 25 · q″^0.25 · exp(−p / 62)
+
+    This function accepts SI inputs (q″ in W/m², P in Pa) and converts
+    internally.  Water only.
+
+    Parameters
+    ----------
+    q_flux : float
+        Heat flux [W/m^2].
+    P_sat : float
+        Saturation pressure [Pa].
+        <!-- TODO: confirm valid pressure range from source -->
+
+    Returns
+    -------
+    float
+        Wall superheat ΔT_sat = T_w − T_sat [K].
+
+    Source: Kandlikar, Shoji & Dhir (1999), *Handbook of Phase Change*,
+    Ch. 15 (Kandlikar), Table 1 (p. 376).  Coefficients 25, exponent
+    0.25, and exp denominator 62 bar are from that table.
+    """
+    # --- Unit conversion: SI → dimensional form ---
+    q_MW = q_flux * 1.0e-6       # W/m² → MW/m²
+    p_bar = P_sat * 1.0e-5       # Pa → bar
+
+    return 25.0 * q_MW**0.25 * math.exp(-p_bar / 62.0)
