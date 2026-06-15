@@ -392,13 +392,21 @@ _FDB_SKIP_REASON = (
 )
 
 
-@pytest.mark.skip(reason=_FDB_SKIP_REASON)
+@pytest.mark.skip(
+    reason=(
+        "Collier 2e p. 175 Example 1 uses Jens-Lottes, not Thom. "
+        "Collier Table 2.3 / §2.4.4.3 (pp. 44–46) is the Thom "
+        "separated-flow pressure-drop multiplier — a different "
+        "correlation, not a valid anchor for the FDB boiling form. "
+        "No external Thom-boiling worked triple located yet."
+    )
+)
 def test_thom_1965_fdb():
     """Thom et al. (1965) FDB wall superheat validated against a published triple.
 
-    TODO: Source a (q″, p, ΔT_sat) triple from Collier & Thome 2e or
-    Todreas & Kazimi.  Feed q″ in W/m² and P in Pa (SI interface);
-    assert ΔT_sat in K.  Tolerance: ±5%.
+    TODO: Source a (q″, p, ΔT_sat) triple — NOT from Collier 2e p. 175
+    (that example uses Jens-Lottes).  Feed q″ in W/m² and P in Pa (SI
+    interface); assert ΔT_sat in K.  Tolerance: ±5%.
     """
     pass
 
@@ -407,12 +415,41 @@ def test_thom_1965_fdb():
 # Jens-Lottes 1951 — FDB wall superheat (water)
 # ---------------------------------------------------------------------------
 
-@pytest.mark.skip(reason=_FDB_SKIP_REASON)
 def test_jens_lottes_1951_fdb():
-    """Jens & Lottes (1951) FDB wall superheat validated against a published triple.
+    """Jens & Lottes (1951) FDB wall superheat vs Collier 2e p. 175 Example 1.
 
-    TODO: Source a (q″, p, ΔT_sat) triple from Collier & Thome 2e or
-    Todreas & Kazimi.  Feed q″ in W/m² and P in Pa (SI interface);
-    assert ΔT_sat in K.  Tolerance: ±5%.
+    Source: Collier, *Convective Boiling and Condensation*, 2nd ed., 1981,
+    p. 175, Example 1, section (f).
+
+    Collier's worked example gives the boiling-partition heat flux
+    q″ = 0.93 MW/m² at T_sat = 285 °C and prints ΔT_sat = 8.05 °C.
+    Collier presents this in collapsed form ΔT_sat = 8.2·q^(1/4),
+    where 8.2 = 25·exp(−69/62), i.e. the committed (25, 62) constants
+    evaluated at the example's ~69 bar.
+
+    Limitations of this single anchor:
+    - q ≈ 1 MW/m² makes the 0.25 exponent only weakly exercised
+      (a 0.25 ↔ 0.5 exponent error shifts the result ~1.8%).
+    - A single pressure does not separate the 25 and 62 constants.
+    - This point primarily validates SI unit handling and overall
+      magnitude; individual constants rest on the Handbook source
+      (Kandlikar/Shoji/Dhir 1999, Ch. 15, Table 1).
     """
-    pass
+    import CoolProp.CoolProp as CP
+
+    # --- Collier's stated inputs ---
+    T_sat_C = 285.0   # °C, Collier p. 175, stated in the figure
+    q_si = 0.93e6     # W/m², from Collier's 0.93 MW/m²
+
+    # Independent steam-table pressure at T_sat = 285 °C.
+    # Expected: ≈ 69 bar (≈ 6.90e6 Pa).
+    p_Pa = CP.PropsSI('P', 'T', T_sat_C + 273.15, 'Q', 0, 'Water')
+    assert 6.8e6 < p_Pa < 7.0e6, f"p_Pa={p_Pa:.0f}, expected ≈ 6.9e6"
+
+    # --- Jens-Lottes via SI interface ---
+    dT = jens_lottes_1951(q_si, p_Pa)
+
+    # Collier's printed answer: ΔT_sat = 8.05 °C.
+    assert dT == pytest.approx(8.05, rel=0.02), (
+        f"Jens-Lottes ΔT: {dT:.4f} K vs Collier 8.05 K"
+    )
