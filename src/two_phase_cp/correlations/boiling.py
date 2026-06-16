@@ -377,6 +377,22 @@ def thom_1965(
     return 22.65 * q_MW**0.5 * math.exp(-p_bar / 87.0)
 
 
+def thom_1965_flux(
+    delta_T_sat: float,
+    P_sat: float,
+) -> float:
+    """Inverse of thom_1965: heat flux from wall superheat.
+
+    Returns q″ [W/m²] given ΔT_sat [K] and P_sat [Pa].
+
+    Analytical inverse of: ΔT = 22.65 · q_MW^0.5 · exp(−p/87)
+    → q_MW = (ΔT / (22.65 · exp(−p/87)))²
+    """
+    p_bar = P_sat * 1.0e-5       # Pa → bar
+    q_MW = (delta_T_sat / (22.65 * math.exp(-p_bar / 87.0))) ** 2
+    return q_MW * 1.0e6           # MW/m² → W/m²
+
+
 # ---------------------------------------------------------------------------
 # Jens-Lottes 1951 — FDB wall-superheat correlation (water only)
 # ---------------------------------------------------------------------------
@@ -422,3 +438,19 @@ def jens_lottes_1951(
     # At Qu & Mudawar Stage-2 condition (1.17 bar) this correlation is
     # ~30× below its validity floor (34.5 bar) — out-of-range placeholder.
     return 25.0 * q_MW**0.25 * math.exp(-p_bar / 62.0)
+
+
+def jens_lottes_1951_flux(
+    delta_T_sat: float,
+    P_sat: float,
+) -> float:
+    """Inverse of jens_lottes_1951: heat flux from wall superheat.
+
+    Returns q″ [W/m²] given ΔT_sat [K] and P_sat [Pa].
+
+    Analytical inverse of: ΔT = 25 · q_MW^0.25 · exp(−p/62)
+    → q_MW = (ΔT / (25 · exp(−p/62)))⁴
+    """
+    p_bar = P_sat * 1.0e-5       # Pa → bar
+    q_MW = (delta_T_sat / (25.0 * math.exp(-p_bar / 62.0))) ** 4
+    return q_MW * 1.0e6           # MW/m² → W/m²

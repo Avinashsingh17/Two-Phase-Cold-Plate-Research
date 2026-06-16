@@ -14,17 +14,17 @@ Source for partial boiling interpolation:
 
 Known gaps (documented, not yet implemented):
   - Saturated CHF correlation (Katto-Ohno) — saturated cells have unchecked CHF
-  - Developed nucleate boiling correlation (e.g. Rohsenow pool boiling) — the
-    FDB asymptote in the partial boiling interpolation currently reuses the BR
-    incipience curve as a stand-in.  Valid near ONB; not validated as an FDB
-    curve at high subcooled superheat.
+  - Developed nucleate boiling correlation — the FDB asymptote in the partial
+    boiling interpolation defaults to the BR incipience curve (legacy stand-in).
+    Selectable via fdb_correlation kwarg; Jens-Lottes and Thom inverses now
+    available but out-of-range at Stage-2 pressures (1.17 bar vs 34.5 bar floor).
   - Two-phase pressure drop (Friedel, Lockhart-Martinelli) — two-phase cells
     report pressure_drop = None
 """
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 
 import CoolProp.CoolProp as CP
 from scipy.optimize import brentq
@@ -49,12 +49,13 @@ from two_phase_cp.properties.water import (
     water_properties_at_pressure,
 )
 
-# Alias: the BR incipience correlation serves as both the ONB criterion and,
-# as a stand-in, the nucleate boiling curve in the partial boiling
-# interpolation.  Near ONB (where the boiling term is small) this is correct.
-# At high subcooled superheat the true FDB curve (Rohsenow pool boiling or
-# similar) would give a different asymptote — this is a documented gap.
-bergles_rohsenow_curve = bergles_rohsenow_onb
+# BR incipience: used for ONB detection (_find_onb_wall_temp).
+# FDB asymptote in the partial boiling interpolation is now selectable via
+# the fdb_correlation kwarg on solve_channel.  Default (None) falls back to
+# the BR incipience curve as the FDB stand-in (legacy behavior).
+_br_onb_curve = bergles_rohsenow_onb
+# Legacy alias — test_analytical.py imports this for expected-value calculations.
+bergles_rohsenow_curve = _br_onb_curve
 
 
 # ---------------------------------------------------------------------------
@@ -84,7 +85,7 @@ def _find_onb_wall_temp(
         if delta_T_sat <= 0.0:
             q_br = 0.0
         else:
-            q_br = bergles_rohsenow_curve(P_bar, delta_T_sat)
+            q_br = _br_onb_curve(P_bar, delta_T_sat)
         q_fc = h_sp * (T_w - T_bulk)
         return q_br - q_fc
 
@@ -101,27 +102,33 @@ def _solve_partial_boiling(
     P_bar: float,
     q_onb: float,
     T_w_onb: float,
+    fdb_curve: Callable[[float, float], float] | None = None,
 ) -> float:
     """Find T_w via Bergles & Rohsenow (1964) partial boiling interpolation.
 
-    q = sqrt( [h_sp*(T_w - T_bulk)]^2 + [max(0, BR(P, T_w-T_sat) - q_onb)]^2 )
+    q = sqrt( [h_sp*(T_w - T_bulk)]^2 + [max(0, FDB(P, T_w-T_sat) - q_onb)]^2 )
 
     Bracket: [T_w_onb, T_bulk + q_applied/h_sp].
 
-    Note: the BR incipience curve is used as a stand-in for the fully-developed
-    nucleate boiling curve.  This is exact at ONB (boiling term vanishes) and
-    approximate at high superheat.  See module docstring for known gaps.
+    Parameters
+    ----------
+    fdb_curve : callable(P_bar, delta_T_sat) → q [W/m²], optional
+        FDB boiling curve used as the nucleate boiling asymptote.
+        Default (None) falls back to the BR incipience curve (legacy stand-in).
 
     Source: Bergles & Rohsenow (1964), J. Heat Transfer, 86, 365-372.
     """
+    if fdb_curve is None:
+        fdb_curve = _br_onb_curve
+
     T_w_sp = T_bulk + q_applied / h_sp  # upper bracket: single-phase T_w
 
     def residual(T_w: float) -> float:
         q_fc = h_sp * (T_w - T_bulk)
         delta_T_sat = T_w - T_sat
         if delta_T_sat > 0.0:
-            q_br = bergles_rohsenow_curve(P_bar, delta_T_sat)
-            boiling = max(0.0, q_br - q_onb)
+            q_fdb = fdb_curve(P_bar, delta_T_sat)
+            boiling = max(0.0, q_fdb - q_onb)
         else:
             boiling = 0.0
         return (q_fc**2 + boiling**2) ** 0.5 - q_applied
@@ -141,6 +148,8 @@ def solve_channel(
     P_in: float,
     q_flux: float | Sequence[float],
     n_cells: int,
+    *,
+    fdb_correlation: Callable[[float, float], float] | None = None,
 ) -> ChannelResult:
     """Solve 1D segmented energy balance along a heated channel.
 
@@ -159,6 +168,11 @@ def solve_channel(
         length *n_cells* for spatially varying.
     n_cells : int
         Number of axial segments.
+    fdb_correlation : callable(delta_T_sat, P_sat_Pa) → q [W/m²], optional
+        FDB boiling curve for the nucleate boiling asymptote in the
+        partial boiling interpolation.  Signature: (delta_T_sat [K],
+        P_sat [Pa]) → q″ [W/m²].  Default (None) falls back to BR
+        incipience curve as a stand-in.
 
     Returns
     -------
@@ -199,6 +213,14 @@ def solve_channel(
         h_fg=sat_inlet.h_fg,
         sigma=sat_inlet.sigma,
     )
+
+    # FDB curve for partial boiling interpolation.
+    # Adapt fdb_correlation(delta_T_sat, P_Pa) to internal (P_bar, dT) signature.
+    if fdb_correlation is not None:
+        def _fdb_curve(P_bar: float, delta_T_sat: float) -> float:
+            return fdb_correlation(delta_T_sat, P_bar * 1e5)
+    else:
+        _fdb_curve = None  # _solve_partial_boiling defaults to BR stand-in
 
     # Forward march
     h_march = h_in
@@ -292,18 +314,21 @@ def solve_channel(
                 is_boiling = False
 
             if is_boiling:
-                # SUBCOOLED BOILING — BR partial boiling interpolation
+                # SUBCOOLED BOILING — partial boiling interpolation
                 regime = Regime.SUBCOOLED_BOILING
                 correlation_name = "Bergles-Rohsenow partial boiling"
 
-                # q_onb for the interpolation = BR at the ONB superheat
-                q_onb_br = bergles_rohsenow_curve(
+                # q_onb for the interpolation = FDB curve at the ONB superheat.
+                # This ensures the boiling term is exactly zero at ONB.
+                _fdb_at_onb = _fdb_curve if _fdb_curve is not None else _br_onb_curve
+                q_onb_fdb = _fdb_at_onb(
                     P_bar, T_w_onb - sat.T_sat
                 )
 
                 T_wall = _solve_partial_boiling(
                     q_i, h_sp, liq.T, sat.T_sat,
-                    P_bar, q_onb_br, T_w_onb,
+                    P_bar, q_onb_fdb, T_w_onb,
+                    fdb_curve=_fdb_curve,
                 )
                 h_eff = (
                     q_i / (T_wall - liq.T)
@@ -313,10 +338,16 @@ def solve_channel(
                 q_onb_val = q_onb_local
                 q_chf_val = q_chf_channel
                 chf_checked = True
-                validation_status = (
-                    "UNVALIDATED — partial boiling interpolation; "
-                    "FDB asymptote approximated by BR incipience curve"
-                )
+                if _fdb_curve is not None:
+                    validation_status = (
+                        "UNVALIDATED — partial boiling interpolation; "
+                        "FDB asymptote from user-supplied correlation"
+                    )
+                else:
+                    validation_status = (
+                        "UNVALIDATED — partial boiling interpolation; "
+                        "FDB asymptote approximated by BR incipience curve"
+                    )
 
                 if q_i >= q_chf_channel:
                     raise CHFExceededError(i, q_i, q_chf_channel)

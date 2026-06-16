@@ -12,8 +12,10 @@ from two_phase_cp.correlations.boiling import (
     KANDLIKAR_F_FL,
     chen_1966,
     jens_lottes_1951,
+    jens_lottes_1951_flux,
     kandlikar_1990,
     thom_1965,
+    thom_1965_flux,
 )
 from two_phase_cp.correlations.chf import hall_mudawar_2000
 from two_phase_cp.correlations.onb import bergles_rohsenow_onb
@@ -30,5 +32,7 @@ __all__ = [
     "KANDLIKAR_F_FL",
     "hall_mudawar_2000",
     "thom_1965",
+    "thom_1965_flux",
     "jens_lottes_1951",
+    "jens_lottes_1951_flux",
 ]
