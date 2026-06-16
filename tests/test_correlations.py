@@ -383,22 +383,15 @@ def test_hall_mudawar_chf_representative(water_10bar):
 # Thom et al. 1965 — FDB wall superheat (water)
 # ---------------------------------------------------------------------------
 
-_FDB_SKIP_REASON = (
-    "Pending independent worked (q″, p, ΔT_sat) triple from Collier & "
-    "Thome 2nd ed. or Todreas & Kazimi Nuclear Systems Vol. 1, in stated "
-    "units (MW/m²–bar–K). Do NOT un-skip by evaluating the formula and "
-    "asserting against its own output — that is regression-against-output. "
-    "Un-skip only against an externally published triple."
-)
-
-
 @pytest.mark.skip(
     reason=(
-        "Collier 2e p. 175 Example 1 uses Jens-Lottes, not Thom. "
-        "Collier Table 2.3 / §2.4.4.3 (pp. 44–46) is the Thom "
-        "separated-flow pressure-drop multiplier — a different "
-        "correlation, not a valid anchor for the FDB boiling form. "
-        "No external Thom-boiling worked triple located yet."
+        "No externally published worked (q″, p, ΔT_sat) triple located. "
+        "Two standard references checked — Collier 2e (p. 175 example uses "
+        "Jens-Lottes) and Todreas & Kazimi I (presents Thom boiling as "
+        "formula-only, no worked triple). Constants corroborated across two independent sources "
+        "(Handbook Ch. 15 Table 1; T&K Eq. 12-28b); what is missing is "
+        "specifically a worked numerical triple, not confidence in the "
+        "constants. Un-skip only against an externally published triple."
     )
 )
 def test_thom_1965_fdb():

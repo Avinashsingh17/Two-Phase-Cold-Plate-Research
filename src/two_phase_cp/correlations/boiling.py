@@ -353,7 +353,8 @@ def thom_1965(
         Heat flux [W/m^2].
     P_sat : float
         Saturation pressure [Pa].
-        <!-- TODO: confirm valid pressure range from source -->
+        Valid ≈ 3.45–6.90 MPa (500–1000 psi, 34.5–69 bar) per Todreas &
+        Kazimi, *Nuclear Systems I*, p. 538.
 
     Returns
     -------
@@ -363,11 +364,16 @@ def thom_1965(
     Source: Kandlikar, Shoji & Dhir (1999), *Handbook of Phase Change*,
     Ch. 15 (Kandlikar), Table 1 (p. 376).  Coefficients 22.65, exponent
     0.5, and exp denominator 87 bar are from that table.
+    SI constants independently confirmed by Todreas & Kazimi, *Nuclear
+    Systems I*, Eq. 12-28b (22.7 / 0.5 / 8.7 MPa — the 22.65 vs 22.7
+    difference is rounding between sources).
     """
     # --- Unit conversion: SI → dimensional form ---
     q_MW = q_flux * 1.0e-6       # W/m² → MW/m²
     p_bar = P_sat * 1.0e-5       # Pa → bar
 
+    # At Qu & Mudawar Stage-2 condition (1.17 bar) this correlation is
+    # ~30× below its validity floor (34.5 bar) — out-of-range placeholder.
     return 22.65 * q_MW**0.5 * math.exp(-p_bar / 87.0)
 
 
@@ -395,7 +401,8 @@ def jens_lottes_1951(
         Heat flux [W/m^2].
     P_sat : float
         Saturation pressure [Pa].
-        <!-- TODO: confirm valid pressure range from source -->
+        Valid ≈ 3.45–6.90 MPa (500–1000 psi, 34.5–69 bar) per Todreas &
+        Kazimi, *Nuclear Systems I*, p. 538.
 
     Returns
     -------
@@ -405,9 +412,13 @@ def jens_lottes_1951(
     Source: Kandlikar, Shoji & Dhir (1999), *Handbook of Phase Change*,
     Ch. 15 (Kandlikar), Table 1 (p. 376).  Coefficients 25, exponent
     0.25, and exp denominator 62 bar are from that table.
+    SI constants independently confirmed by Todreas & Kazimi, *Nuclear
+    Systems I*, Eq. 12-27b (25 / 0.25 / 6.2 MPa).
     """
     # --- Unit conversion: SI → dimensional form ---
     q_MW = q_flux * 1.0e-6       # W/m² → MW/m²
     p_bar = P_sat * 1.0e-5       # Pa → bar
 
+    # At Qu & Mudawar Stage-2 condition (1.17 bar) this correlation is
+    # ~30× below its validity floor (34.5 bar) — out-of-range placeholder.
     return 25.0 * q_MW**0.25 * math.exp(-p_bar / 62.0)
