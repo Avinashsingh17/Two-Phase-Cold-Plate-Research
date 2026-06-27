@@ -4,7 +4,9 @@ Forward-marches energy balance from inlet to outlet.  Properties evaluated
 at local (P, h) state — sequential, no global iteration.
 
 Regime detection:
-  - Single-phase: Dittus-Boelter (default)
+  - Single-phase: laminar/turbulent branched, hard switch at Re=2300 —
+    Gnielinski (turbulent), Qu & Mudawar 2003 Nu3 (laminar rectangular) or
+    round-tube Nu=4.36 (laminar round)
   - Subcooled boiling: Bergles & Rohsenow (1964) partial boiling interpolation
   - Saturated boiling: Kandlikar 1990 (default)
   - CHF breach (subcooled): Hall & Mudawar 2000 — raises CHFExceededError
@@ -42,7 +44,8 @@ from two_phase_cp.correlations.chf import hall_mudawar_2000
 from two_phase_cp.correlations.onb import bergles_rohsenow_onb
 from two_phase_cp.correlations.single_phase import (
     _petukhov_friction,
-    dittus_boelter,
+    gnielinski,
+    qu_mudawar_nu3,
 )
 from two_phase_cp.properties.water import (
     liquid_state_at_Ph,
@@ -288,16 +291,30 @@ def solve_channel(
                 )
 
         else:
-            # Subcooled: compute single-phase HTC
-            Re_clamped = max(Re, 2300.1)
-            Nu_sp = dittus_boelter(Re_clamped, liq.Pr, n=0.4)
-            h_sp = Nu_sp * liq.k / geometry.D_h
-
-            if Re < 10_000.0:
-                violations.append(
-                    f"Re={Re:.0f} < 10000 — Dittus-Boelter "
-                    f"out-of-envelope (laminar)"
+            # Subcooled: single-phase forced-convection HTC.
+            # Laminar/turbulent branched with a hard switch at Re = 2300
+            # (no clamp, no blend), replacing the former clamped Dittus-Boelter.
+            if Re >= 2300.0:
+                # Turbulent: Gnielinski (smooth tube, Petukhov friction).
+                Nu_sp = gnielinski(Re, liq.Pr)
+                sp_method = "Gnielinski"
+                sp_validation = "validated (Gnielinski 1976)"
+            elif geometry.aspect_ratio is not None:
+                # Laminar, rectangular: Qu & Mudawar 2003 Eq. (11) Nu3(beta),
+                # beta = short side / long side <= 1.
+                ar = geometry.aspect_ratio
+                beta = ar if ar <= 1.0 else 1.0 / ar
+                Nu_sp = qu_mudawar_nu3(beta)
+                sp_method = "Qu-Mudawar Nu3 (laminar, 3-wall)"
+                sp_validation = (
+                    "validated (Qu & Mudawar 2003 Eq. 11; Shah & London 1978)"
                 )
+            else:
+                # Laminar, round tube: fully-developed constant-q'' (H1) limit.
+                Nu_sp = 4.36
+                sp_method = "laminar round-tube Nu=4.36 (H1)"
+                sp_validation = "validated (Incropera 7e Table 8.1, H1)"
+            h_sp = Nu_sp * liq.k / geometry.D_h
 
             T_w_sp = liq.T + q_i / h_sp
             delta_T_sat = T_w_sp - sat.T_sat
@@ -354,14 +371,14 @@ def solve_channel(
             else:
                 # SINGLE-PHASE
                 regime = Regime.SINGLE_PHASE
-                correlation_name = "Dittus-Boelter"
+                correlation_name = sp_method
 
                 T_wall = T_w_sp
                 h_eff = h_sp
                 q_onb_val = q_onb_local
                 q_chf_val = None
                 chf_checked = False
-                validation_status = "validated (Incropera 7e Ex 8.6)"
+                validation_status = sp_validation
 
         # Pressure drop — single-phase only
         if regime == Regime.SINGLE_PHASE:

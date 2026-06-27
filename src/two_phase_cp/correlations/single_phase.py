@@ -180,3 +180,61 @@ gnielinski.envelope = CorrelationEnvelope(  # type: ignore[attr-defined]
     known_failure_modes=("Below Re = 2300 (laminar regime)",),
     wiki_page="",
 )
+
+
+# ---------------------------------------------------------------------------
+# Qu & Mudawar (2003) rectangular-channel laminar Nusselt number
+# ---------------------------------------------------------------------------
+
+def qu_mudawar_nu3(beta: float) -> float:
+    """Fully-developed laminar Nusselt number, 3-wall-heated rectangular duct.
+
+    Polynomial fit in aspect ratio beta (short side / long side, 0 < beta <= 1):
+
+        Nu3 = 8.235 (1 - 1.883 b + 3.767 b^2 - 5.814 b^3 + 5.361 b^4 - 2.0 b^5)
+
+    Returns the Nusselt number for three heated walls and one adiabatic wall,
+    normalized on the full-perimeter hydraulic diameter D_h = 2 w d / (w + d).
+
+    Parameters
+    ----------
+    beta : float
+        Channel aspect ratio, short side / long side, 0 < beta <= 1.
+
+    Returns
+    -------
+    float
+        Fully-developed laminar Nusselt number (three-wall heating).
+
+    Source
+    ------
+    Qu & Mudawar (2003), "Flow boiling heat transfer in two-phase micro-channel
+    heat sinks - I. Experimental investigation and assessment of correlation
+    methods," Int. J. Heat Mass Transfer 46, 2755-2771, Eq. (11).  Qu & Mudawar
+    in turn cite Shah & London (1978) [their ref 35] and Bau (1998) [their
+    ref 36] for the polynomial coefficients.
+
+    Stated assumptions
+    ------------------
+    (a) H1 thermal boundary condition - constant axial heat flux, peripherally
+        isothermal wall.  Qu & Mudawar do NOT state H1/H2/T; H1 is adopted here
+        because a high-conductivity copper substrate smears the peripheral
+        wall-temperature distribution, making the isothermal-perimeter
+        idealization the right one.
+    (b) Fully-developed laminar flow - justified at Stage-2 because the entry
+        length is short relative to channel length.  This is the same
+        fully-developed Nu that Qu & Mudawar themselves plug into their 3-wall
+        correction factor Nu3/Nu4 (their Eq. 10).
+
+    Transcription check (companion 4-wall polynomial, Eq. 12, NOT shipped):
+        Nu4 = 8.235 (1 - 2.042 b + 3.085 b^2 - 2.477 b^3 + 1.058 b^4 - 0.186 b^5)
+    reproduces the Shah & London 4-wall value 4.85 at b = 231/713 = 0.324.
+    """
+    return 8.235 * (
+        1.0
+        - 1.883 * beta
+        + 3.767 * beta**2
+        - 5.814 * beta**3
+        + 5.361 * beta**4
+        - 2.0 * beta**5
+    )

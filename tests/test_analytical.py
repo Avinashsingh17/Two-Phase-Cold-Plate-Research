@@ -28,7 +28,8 @@ from two_phase_cp.analytical.model import (
     _solve_partial_boiling,
     bergles_rohsenow_curve,
 )
-from two_phase_cp.correlations.single_phase import dittus_boelter
+from two_phase_cp.correlations.single_phase import gnielinski, qu_mudawar_nu3
+from two_phase_cp.properties.water import liquid_state_at_Ph
 
 
 # ---------------------------------------------------------------------------
@@ -47,38 +48,43 @@ def _round_tube(D: float, L: float) -> ChannelGeometry:
 
 
 # ---------------------------------------------------------------------------
-# 1. Limiting case — single-phase reproduces Dittus-Boelter
+# 1. Wiring — turbulent single-phase branch delegates to gnielinski()
 # ---------------------------------------------------------------------------
 
-def test_single_phase_single_cell_matches_dittus_boelter():
-    """Single-cell all-SP channel: T_wall = T_in + q/h_DB exactly.
+def test_single_phase_turbulent_branch_wires_gnielinski():
+    """WIRING test: the turbulent single-phase branch (Re >= 2300) labels
+    itself "Gnielinski" and its HTC equals the standalone gnielinski() result
+    evaluated on the model's own inlet state.
 
-    Independent hand calc at inlet state (P_in, T_in) vs model output.
-    No discretization error for single cell evaluated at inlet.
+    This asserts the plumbing only — that solve_channel calls gnielinski()
+    with the model's Re/Pr/k/D_h convention and uses the result unchanged.
+    The PHYSICS of gnielinski() is validated independently against a published
+    value in tests/test_correlations.py::test_gnielinski_cengel_ghajar_ex8_5
+    (Çengel & Ghajar 2025, Ex 8-5: Nu ~= 69.4, h ~= 1460).
     """
-    D = 0.010  # 10 mm — keeps Re > 10,000
+    D = 0.010  # 10 mm + G=1000 -> Re ~= 11,765 (turbulent branch)
     L = 0.5
     G = 1000.0
     T_in = 300.0
     P_in = 101_325.0
-    q = 10_000.0  # low enough to stay well below T_sat
+    q = 10_000.0  # low enough to stay single-phase, well below T_sat
 
     geo = _round_tube(D, L)
     result = solve_channel(geo, G=G, T_in=T_in, P_in=P_in, q_flux=q, n_cells=1)
     cell = result.cells[0]
 
-    # Independent computation at inlet state
-    mu = CP.PropsSI("V", "P", P_in, "T", T_in, "Water")
-    k = CP.PropsSI("L", "P", P_in, "T", T_in, "Water")
-    Pr = CP.PropsSI("Prandtl", "P", P_in, "T", T_in, "Water")
-    Re = G * D / mu
-    Nu = dittus_boelter(Re, Pr, n=0.4)
-    h_db = Nu * k / D
-    T_wall_expected = T_in + q / h_db
+    # Reproduce the model's exact inlet-state convention: liquid props from
+    # liquid_state_at_Ph(P_in, h_in), Re from G*D_h/mu.
+    h_in = CP.PropsSI("H", "P", P_in, "T", T_in, "Water")
+    liq = liquid_state_at_Ph(P_in, h_in)
+    Re = G * D / liq.mu
+    assert Re >= 2300.0  # confirm turbulent branch is the one under test
+    h_gnielinski = gnielinski(Re, liq.Pr) * liq.k / D
 
     assert cell.regime == Regime.SINGLE_PHASE
-    assert cell.T_wall == pytest.approx(T_wall_expected, rel=1e-10)
-    assert cell.correlation == "Dittus-Boelter"
+    assert cell.correlation == "Gnielinski"
+    assert cell.h_eff == pytest.approx(h_gnielinski, rel=1e-12)
+    assert cell.T_wall == pytest.approx(T_in + q / h_gnielinski, rel=1e-12)
 
 
 def test_single_phase_multi_cell_all_sp():
@@ -358,16 +364,96 @@ def test_rectangular_channel_flags_envelope_violation():
         assert any("Rectangular" in v for v in cell.envelope_violations)
 
 
-def test_laminar_re_flags_envelope_violation():
-    """Low Re flags Dittus-Boelter out-of-envelope."""
-    # Small D + low G → Re < 10,000
-    geo = _round_tube(D=0.001, L=0.05)
+def test_round_tube_laminar_nu436_no_violation():
+    """Round-tube laminar branch (Re < 2300) uses Nu = 4.36 and flags nothing.
+
+    Small D + low G -> Re ~= 588 (laminar).  The branch must apply the
+    fully-developed laminar round-tube Nusselt number for the H1 (constant
+    surface heat flux) boundary condition, Nu = 4.36, and -- unlike the old
+    clamped Dittus-Boelter path -- must NOT raise an out-of-envelope flag,
+    because laminar fully-developed Nu is in-envelope.
+
+    Nu = 4.36 source: Çengel & Ghajar, *Heat and Mass Transfer*, fully-developed
+    laminar flow in a circular tube, constant-q'' (H1) table value.
+    """
+    D = 0.001
+    geo = _round_tube(D=D, L=0.05)
+    P_in = 101_325.0
+    T_in = 300.0
     result = solve_channel(
-        geo, G=500.0, T_in=300.0, P_in=101_325.0,
+        geo, G=500.0, T_in=T_in, P_in=P_in,
         q_flux=10_000.0, n_cells=3,
     )
+
+    # Confirm the laminar branch is under test
+    h_in = CP.PropsSI("H", "P", P_in, "T", T_in, "Water")
+    liq = liquid_state_at_Ph(P_in, h_in)
+    Re = 500.0 * D / liq.mu
+    assert Re < 2300.0
+    h_expected = 4.36 * liq.k / D
+
     for cell in result.cells:
-        assert any("Re=" in v and "laminar" in v for v in cell.envelope_violations)
+        assert cell.regime == Regime.SINGLE_PHASE
+        assert cell.correlation == "laminar round-tube Nu=4.36 (H1)"
+        # Inlet cell HTC matches Nu=4.36 exactly (downstream cells drift only
+        # via property variation over dz, so check the first cell tightly).
+        assert cell.envelope_violations == ()
+    assert result.cells[0].h_eff == pytest.approx(h_expected, rel=1e-12)
+
+
+def test_rectangular_laminar_nu3():
+    """Rectangular laminar branch (Re < 2300) wires qu_mudawar_nu3(beta).
+
+    At the Stage-2 Qu & Mudawar geometry (231 um x 713 um) and a laminar
+    operating point (G=255, T_in=60 C -> Re ~= 191), the single-phase HTC must
+    equal qu_mudawar_nu3(beta) * k / D_h on the model's own inlet state, with
+    beta = short/long = 231/713.
+
+    The 5.27 polynomial value is NOT asserted as an independent published
+    number -- it is our own evaluation of Eq. (11).  The function is instead
+    anchored non-circularly via:
+      * the companion 4-wall polynomial Nu4(0.324) -> 4.85 +/- 0.02, the
+        Shah & London (1978) tabulated 4-sided value (Qu & Mudawar 2003 Eq. 12);
+      * the parallel-plate limit Nu3(0) = Nu4(0) = 8.235 (both polynomials
+        reduce to the H1 infinite-parallel-plate value at beta -> 0).
+    """
+    # --- non-circular anchors on the polynomial itself ---
+    def nu4(b):  # Qu & Mudawar 2003 Eq. (12), 4-wall — check only, not shipped
+        return 8.235 * (
+            1.0 - 2.042 * b + 3.085 * b**2 - 2.477 * b**3
+            + 1.058 * b**4 - 0.186 * b**5
+        )
+
+    beta = 231.0 / 713.0  # = 0.32398, short/long
+    assert nu4(beta) == pytest.approx(4.85, abs=0.02)        # Shah & London 4-wall
+    assert qu_mudawar_nu3(0.0) == pytest.approx(8.235, abs=1e-9)  # parallel-plate H1
+    assert nu4(0.0) == pytest.approx(8.235, abs=1e-9)            # same limit, 4-wall
+
+    # --- wiring: model rectangular laminar branch uses Nu3(beta) ---
+    W, H = 231e-6, 713e-6
+    D_h = 2 * W * H / (W + H)
+    geo = ChannelGeometry(
+        D_h=D_h, L=0.0448, A_flow=W * H,
+        P_heated=W + 2 * H,  # three-sided heating
+        cross_section=CrossSection.RECTANGULAR,
+        aspect_ratio=H / W,
+    )
+    G = 255.0
+    T_in = 333.15  # 60 C
+    P_in = 1.17e5
+    q = 50_000.0   # low enough to stay single-phase below CHF
+    result = solve_channel(geo, G=G, T_in=T_in, P_in=P_in, q_flux=q, n_cells=1)
+    cell = result.cells[0]
+
+    h_in = CP.PropsSI("H", "P", P_in, "T", T_in, "Water")
+    liq = liquid_state_at_Ph(P_in, h_in)
+    Re = G * D_h / liq.mu
+    assert Re < 2300.0  # confirm rectangular laminar branch is under test
+    h_expected = qu_mudawar_nu3(min(W, H) / max(W, H)) * liq.k / D_h
+
+    assert cell.regime == Regime.SINGLE_PHASE
+    assert cell.correlation == "Qu-Mudawar Nu3 (laminar, 3-wall)"
+    assert cell.h_eff == pytest.approx(h_expected, rel=1e-12)
 
 
 def test_q_flux_length_mismatch_raises():
