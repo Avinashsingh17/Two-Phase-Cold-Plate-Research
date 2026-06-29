@@ -1,7 +1,7 @@
 ---
 title: "Open Questions — Consolidated TODO Tracker"
 type: synthesis
-last_updated: 2026-05-20
+last_updated: 2026-06-28
 tags: [meta, open-questions, TODO, lint]
 ---
 
@@ -34,6 +34,7 @@ Consolidated list of all open `<!-- TODO -->` items and unresolved questions acr
 | 11 | [[Drummond2018_manifold_microchannel]] | In the low-quality regime (x_out < 0.1), HTC is roughly independent of channel cross-section for all three geometries tested. If HTC doesn't strongly depend on cross-section in the confined regime, the dominant design levers are (a) wall area per unit footprint via fin density/efficiency and (b) staying below dryout quality — not channel aspect ratio per se. Does this hold for water and for our cold plate scale? | May warrant a design-philosophy update: optimize fin density + dryout margin rather than aspect ratio. Verify with water microchannel data (Qu & Mudawar shows similar trend). |
 | 12 | [[Drummond2018_manifold_microchannel]] | HFE-7100 RPI closure source for Phase 2 optimization — **scoped, outcome (a) with significant caveats** | See detailed entry below |
 | 13 | [[Ozguc2024_topology_optimization]] | Should we optimize for a single operating point or across an envelope of heat loads? Two-phase TO designs are heat-load-dependent (unlike single-phase), so a design optimized at one Q_in may not be optimal at another. | Ozguc Part 1 Fig. 5 shows how designs change with Q_in. Relevant to Phase 5 objective function design: single-point optimization is simpler but may miss robustness; envelope optimization requires multi-point evaluation per candidate, increasing computational cost. |
+| 14 | [[CHF_correlations]] / model gap #1 | **Saturated-CHF correlation** needed for the regime where exit quality x_o ≥ 0. Currently flag-only; the Hall & Mudawar 2000 subcooled-CHF guard (commit [pending]) now hands off to "saturated-CHF regime, correlation not implemented" when x_o crosses 0, rather than extrapolating. | Open (sharpened 2026-06-28) | Select and implement a saturated/dryout CHF correlation **after** verifying its stated validity envelope (D_h, G, P, x) against our design envelope — same discipline applied to Hall & Mudawar this session. See #14 Detail below. |
 
 ## #12 Detail: HFE-7100 RPI Closure Source (Resolved to Scoped Workstream)
 
@@ -75,6 +76,44 @@ HFE-7100 is nearly fully wetting on silicon and copper surfaces (σ = 11.11 mN/m
 6. Sensitivity analysis on the extrapolation — quantify how much R_eff prediction changes with ±50% variation in N, D_d, f at our operating conditions
 
 **Lioger-Arago et al. 2022** provides a worked Eulerian-CFD precedent for HFE-7100 in a vertical mini-channel (closure constants in that paper to be verified at ingest time). **Al-Zaidi et al. 2025** warrants full wiki ingest when Phase 2 closure setup begins.
+
+## #14 Detail: Saturated-CHF Correlation (model gap #1)
+
+**Status:** Open — sharpened 2026-06-28. Was "saturated cells have unchecked CHF" (flag-only); now an explicit, bounded hand-off point established by the Hall & Mudawar envelope-guard work this session.
+
+### Nomenclature
+
+- **CHF (critical heat flux):** the wall heat flux at which the heated surface can no longer maintain effective liquid contact, producing an abrupt wall-temperature excursion (dryout / burnout). The design-limiting thermal event.
+- **Subcooled CHF:** CHF occurring while the bulk fluid is below saturation (exit quality x_o < 0); mechanism is typically near-wall bubble crowding / departure from nucleate boiling (DNB). Predicted in the model by [[HallMudawar2000_subcooled_CHF]].
+- **Saturated CHF:** CHF occurring once the fluid is at or above saturation (x_o ≥ 0); mechanism is typically annular liquid-film dryout. Requires a saturated/dryout CHF correlation — **not implemented** (this gap).
+- **x_o (exit quality):** thermodynamic equilibrium quality at the channel outlet. x_o < 0 → subcooled outlet; x_o ≥ 0 → saturated/two-phase outlet. Derived from the energy balance, not a direct input.
+- **Katto-Ohno 1984:** Katto, Y. & Ohno, H., "An improved version of the generalized correlation of critical heat flux for forced convective boiling in uniformly heated vertical tubes," *IJHMT* 27 (1984). General-purpose flow-boiling CHF correlation; database is largely conventional-channel/tube.
+- **Lee & Mudawar 2009:** Lee, J. & Mudawar, I., "Critical heat flux for subcooled flow boiling in micro-channel heat sinks," *IJHMT* 52 (13–14): 3341–3352, 2009 (lit-review **B2**). Microchannel-specific CHF, working fluid **HFE-7100** (the Phase-2 fluid), same geometry class as our cold plate.
+- **Hall & Mudawar 2000:** Hall, D.D. & Mudawar, I., "Critical heat flux (CHF) for water flow in tubes — II. Subcooled CHF correlations," *IJHMT* 43 (2000) 2605–2640 (lit-review **A2**). Inlet-conditions subcooled-CHF correlation; water, uniformly heated round tube. The correlation currently implemented, now envelope-guarded this session.
+- **Qu & Mudawar 2003:** Stage-2 validation benchmark (saturated flow boiling, water microchannel heat sink); see [[QuMudawar2003_microchannel_boiling_I]]. Tests terminate at x_e ≈ 0.2 on a quality criterion and never reach CHF of either type.
+- **gap #1:** the model's documented "Saturated CHF correlation (Katto-Ohno)" gap — saturated cells currently have unchecked CHF (per `src/two_phase_cp/analytical/model.py` docstring, "Known gaps").
+
+### What
+
+The model needs a **saturated-CHF correlation** for the regime where exit quality **x_o ≥ 0** (fluid leaves the channel at or above saturation). This is currently **flag-only**: saturated cells carry unchecked CHF. The Hall & Mudawar 2000 subcooled-CHF guard (commit [pending]) now **explicitly hands off** to a "saturated-CHF regime, correlation not implemented" state when x_o crosses 0, rather than silently extrapolating the subcooled correlation past its validity. The hand-off makes the missing-correlation boundary visible instead of returning a non-physical number.
+
+### When it binds
+
+- **Not in Phase 3 validation.** Stage 2 ([[QuMudawar2003_microchannel_boiling_I]]) terminates at x_o ≈ 0.2 on a quality criterion and never approaches CHF of either type, so the missing saturated-CHF correlation does not affect validation.
+- **Load-bearing in Phase 4/5 design exploration.** The optimizer drives toward high heat flux, and the **≥1.5× CHF margin constraint** activates in the **saturated** regime (x_o ≥ 0). Without a saturated-CHF correlation, that constraint cannot be evaluated where it most often binds during optimization.
+
+### Open sourcing decision (do NOT resolve now)
+
+Candidate correlations:
+
+- **(a) Katto-Ohno 1984** (*IJHMT* 27) — general-purpose; widely used. Risk: database is largely conventional-channel/tube, so applying it to our microchannel envelope risks **the same out-of-regime extrapolation just diagnosed for Hall & Mudawar** this session.
+- **(b) Lee & Mudawar 2009** (lit-review **B2**) — **microchannel-specific**, HFE-7100 (Phase-2 fluid), same geometry class as our cold plate.
+
+**Selection discipline:** read each correlation's stated validity envelope (D_h, G, P, x range) against our design envelope **before** selecting — the same validity-range-before-use discipline applied to Hall & Mudawar this session. **Flag: do not default to Katto-Ohno by name-recognition; verify regime fit first.**
+
+### Cross-reference
+
+Precedent for this approach is the **Hall & Mudawar subcooled-CHF envelope-guard work this session** — refusing to extrapolate a CHF correlation outside its sourced validity range, and surfacing the boundary explicitly. See [[HallMudawar2000_subcooled_CHF]] and [[CHF_correlations]]. Related open items: #6 (D → D_h substitution uncertainty), #7 (CHF for dielectric fluids), #10 (subcooled CHF vs. dryout incipience quality x_di — which constraint binds when x_e > 0).
 
 ## Methodological Note: Validation Fluid ≠ Optimization Fluid
 
