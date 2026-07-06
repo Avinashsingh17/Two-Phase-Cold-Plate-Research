@@ -47,5 +47,7 @@ def test_hall_mudawar_envelope_matches_wiki():
     assert env.d_h_range_mm == (0.25, 15.0)
     assert env.pressure_range_bar == (1.0, 200.0)
     assert env.mass_flux_range_kg_m2s == (300.0, 30_000.0)
-    assert env.quality_range == (-2.0, 0.0)
+    assert env.quality_range == (-2.0, 0.0)  # inlet quality x_i
+    assert env.l_over_d_range == (2.0, 200.0)
+    assert env.outlet_quality_range == (-1.0, 0.0)  # x_o
     assert "10.3%" in env.reported_accuracy

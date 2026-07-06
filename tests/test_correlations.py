@@ -9,11 +9,13 @@ Each test cites its reference source.  Tolerances reflect the source:
 import pytest
 
 from two_phase_cp.correlations import (
+    SubcooledCHFStatus,
     bergles_rohsenow_onb,
     chen_1966,
     dittus_boelter,
     gnielinski,
     hall_mudawar_2000,
+    hall_mudawar_2000_assess,
     jens_lottes_1951,
     kandlikar_1990,
     sieder_tate,
@@ -377,6 +379,63 @@ def test_hall_mudawar_chf_representative(water_10bar):
     )
     # TODO: replace with validated reference value
     assert q_chf == pytest.approx(..., rel=0.10)
+
+
+# ---------------------------------------------------------------------------
+# Hall & Mudawar 2000 — envelope-guarded assessment (Option 4)
+# Envelope: Table 4 inlet-conditions row, p. 2616. Two distinct non-numeric
+# outcomes (out-of-envelope vs saturated handoff) must not be conflated.
+# ---------------------------------------------------------------------------
+
+def test_hm_assess_out_of_envelope_hard_bound(water_10bar):
+    """G below the 300 kg/m²·s floor → OUT_OF_ENVELOPE, no q_chf, G violation."""
+    p = water_10bar
+    a = hall_mudawar_2000_assess(
+        G=100.0, D=0.003, L=0.100, P=1_000_000.0, x_i_prime=-0.3,
+        rho_f=p.rho_f, rho_g=p.rho_g, h_fg=p.h_fg, sigma=p.sigma,
+    )
+    assert a.status is SubcooledCHFStatus.OUT_OF_ENVELOPE
+    assert a.q_chf is None
+    g_viol = [v for v in a.violations if v.param == "G"]
+    assert len(g_viol) == 1
+    assert g_viol[0].bound == "low"
+    assert g_viol[0].limit == 300.0
+    assert g_viol[0].amount == pytest.approx(200.0)  # 300 - 100
+    assert "extrapolation" in a.reason
+
+
+def test_hm_assess_saturated_handoff(water_10bar):
+    """Outlet reaches saturation at CHF (x_o ≥ 0) → SATURATED_HANDOFF.
+
+    In-envelope inputs (G=5000, D=3mm, L/D=33, x_i≈-0.028) but the derived
+    outlet quality crosses 0 at CHF → subcooled CHF no longer governs.  Must be
+    a DIFFERENT signal from OUT_OF_ENVELOPE, with no q_chf returned.
+    """
+    p = water_10bar
+    a = hall_mudawar_2000_assess(
+        G=5000.0, D=0.003, L=0.100, P=1_000_000.0, x_i_prime=-0.0283,
+        rho_f=p.rho_f, rho_g=p.rho_g, h_fg=p.h_fg, sigma=p.sigma,
+    )
+    assert a.status is SubcooledCHFStatus.SATURATED_HANDOFF
+    assert a.q_chf is None
+    assert a.x_o is not None and a.x_o >= 0.0
+    assert a.violations == ()
+    assert "saturated-CHF" in a.reason and "gap #1" in a.reason
+
+
+def test_hm_assess_assessable_returns_qchf(water_10bar):
+    """In-envelope with subcooled outlet (x_o < 0) → ASSESSABLE, numeric q_chf.
+
+    Shorter tube / more subcooling than the handoff case keeps the outlet
+    subcooled at CHF.  q_chf here must equal the bare correlation value.
+    """
+    p = water_10bar
+    kw = dict(G=5000.0, D=0.003, L=0.050, x_i_prime=-0.0713,
+              rho_f=p.rho_f, rho_g=p.rho_g, h_fg=p.h_fg, sigma=p.sigma)
+    a = hall_mudawar_2000_assess(P=1_000_000.0, **kw)
+    assert a.status is SubcooledCHFStatus.ASSESSABLE
+    assert a.x_o is not None and a.x_o < 0.0
+    assert a.q_chf == pytest.approx(hall_mudawar_2000(**kw))
 
 
 # ---------------------------------------------------------------------------

@@ -9,7 +9,10 @@ Regime detection:
     round-tube Nu=4.36 (laminar round)
   - Subcooled boiling: Bergles & Rohsenow (1964) partial boiling interpolation
   - Saturated boiling: Kandlikar 1990 (default)
-  - CHF breach (subcooled): Hall & Mudawar 2000 — raises CHFExceededError
+  - CHF (subcooled): Hall & Mudawar 2000, envelope-guarded (Option 4). Three
+    outcomes — genuine in-envelope burnout (q_applied >= q_chf) raises
+    CHFExceededError; out-of-envelope or saturated-regime (x_o >= 0) cells are
+    flagged not-assessable (chf_assessable=False + chf_reason), never raised.
 
 Source for partial boiling interpolation:
   Bergles & Rohsenow (1964), J. Heat Transfer, 86, 365-372.
@@ -40,7 +43,11 @@ from two_phase_cp.analytical._types import (
     Regime,
 )
 from two_phase_cp.correlations.boiling import kandlikar_1990
-from two_phase_cp.correlations.chf import hall_mudawar_2000
+from two_phase_cp.correlations.chf import (
+    REASON_SATURATED_HANDOFF,
+    SubcooledCHFStatus,
+    hall_mudawar_2000_assess,
+)
 from two_phase_cp.correlations.onb import bergles_rohsenow_onb
 from two_phase_cp.correlations.single_phase import (
     _petukhov_friction,
@@ -202,14 +209,17 @@ def solve_channel(
     # Inlet state
     h_in = CP.PropsSI("H", "P", P_in, "T", T_in, "Water")
 
-    # Channel-level CHF (subcooled, Hall & Mudawar 2000)
+    # Channel-level subcooled CHF — envelope-guarded (Hall & Mudawar 2000,
+    # Option 4).  Assessed once at inlet conditions; the outcome gates how
+    # subcooled-boiling cells report/enforce CHF below.
     sat_inlet = water_properties_at_pressure(P_in)
     h_f_inlet = CP.PropsSI("H", "P", P_in, "Q", 0, "Water")
     x_i_prime = (h_in - h_f_inlet) / sat_inlet.h_fg
-    q_chf_channel = hall_mudawar_2000(
+    chf_assessment = hall_mudawar_2000_assess(
         G=G,
         D=geometry.D_h,
         L=geometry.L,
+        P=P_in,
         x_i_prime=x_i_prime,
         rho_f=sat_inlet.rho_f,
         rho_g=sat_inlet.rho_g,
@@ -280,6 +290,10 @@ def solve_channel(
             q_onb_val: float | None = None
             q_chf_val: float | None = None
             chf_checked = False
+            # Locally saturated (x_eq >= 0): subcooled CHF does not govern —
+            # saturated-CHF correlation (gap #1) applies but is not implemented.
+            chf_assessable = False
+            chf_reason: str | None = REASON_SATURATED_HANDOFF
             validation_status = (
                 "UNVALIDATED — test skipped (Collier & Thome 3e)"
             )
@@ -353,8 +367,21 @@ def solve_channel(
                     else float("inf")
                 )
                 q_onb_val = q_onb_local
-                q_chf_val = q_chf_channel
-                chf_checked = True
+                # CHF reporting/enforcement gated by the channel-level guarded
+                # assessment (Option 4): only an ASSESSABLE (in-envelope,
+                # subcooled-outlet) CHF is a real number and can trigger burnout.
+                if chf_assessment.status == SubcooledCHFStatus.ASSESSABLE:
+                    q_chf_val = chf_assessment.q_chf
+                    chf_checked = True
+                    chf_assessable = True
+                    chf_reason = None
+                else:
+                    # OUT_OF_ENVELOPE or SATURATED_HANDOFF — flag, never raise.
+                    q_chf_val = None
+                    chf_checked = False
+                    chf_assessable = False
+                    chf_reason = chf_assessment.reason
+
                 if _fdb_curve is not None:
                     validation_status = (
                         "UNVALIDATED — partial boiling interpolation; "
@@ -366,8 +393,12 @@ def solve_channel(
                         "FDB asymptote approximated by BR incipience curve"
                     )
 
-                if q_i >= q_chf_channel:
-                    raise CHFExceededError(i, q_i, q_chf_channel)
+                # Genuine physical burnout only when subcooled CHF is assessable.
+                if (
+                    chf_assessment.status == SubcooledCHFStatus.ASSESSABLE
+                    and q_i >= chf_assessment.q_chf
+                ):
+                    raise CHFExceededError(i, q_i, chf_assessment.q_chf)
             else:
                 # SINGLE-PHASE
                 regime = Regime.SINGLE_PHASE
@@ -378,6 +409,9 @@ def solve_channel(
                 q_onb_val = q_onb_local
                 q_chf_val = None
                 chf_checked = False
+                # Not boiling — subcooled CHF is not a concern for this cell.
+                chf_assessable = True
+                chf_reason = None
                 validation_status = sp_validation
 
         # Pressure drop — single-phase only
@@ -403,6 +437,8 @@ def solve_channel(
                 q_onb=q_onb_val,
                 q_chf=q_chf_val,
                 chf_checked=chf_checked,
+                chf_assessable=chf_assessable,
+                chf_reason=chf_reason,
                 envelope_violations=tuple(violations),
                 validation_status=validation_status,
                 pressure_drop=pressure_drop,

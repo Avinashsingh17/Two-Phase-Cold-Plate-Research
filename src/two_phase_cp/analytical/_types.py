@@ -65,7 +65,10 @@ class CellResult:
     q_applied: float  # applied heat flux [W/m^2]
     q_onb: float | None  # ONB heat flux [W/m^2] (if evaluated)
     q_chf: float | None  # CHF [W/m^2] (if evaluated)
-    chf_checked: bool  # whether CHF was evaluated for this cell
+    chf_checked: bool  # whether subcooled CHF was validly evaluated for this cell
+    chf_assessable: bool  # False when subcooled CHF cannot be assessed (Option 4)
+    chf_reason: str | None  # why not assessable (out-of-envelope vs saturated
+    #                         handoff); None when assessable
     envelope_violations: tuple[str, ...]
     validation_status: str
     pressure_drop: float | None  # cell delta-P [Pa]; None for two-phase

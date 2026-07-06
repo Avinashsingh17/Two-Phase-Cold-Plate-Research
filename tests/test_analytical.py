@@ -189,21 +189,75 @@ def test_saturated_regime_detected():
 # ---------------------------------------------------------------------------
 
 def test_chf_exceeded_raises():
-    """CHFExceededError when q exceeds subcooled CHF.
+    """Genuine in-envelope burnout raises CHFExceededError (assessable path).
 
-    At 10 bar, G=5000, D=3mm: q_CHF ~ 2 MW/m^2.
-    Apply 10 MW/m^2 to guarantee exceedance at the first boiling cell.
+    Under the Option-4 envelope guard, a subcooled-CHF burnout is raised only
+    when the CHF is ASSESSABLE — in-envelope AND the outlet stays subcooled at
+    CHF (x_o < 0).  Conditions here: 10 bar, G=5000, D=3mm, L=50mm (L/D=16.7),
+    T_in=420 K (~33 K subcooling) → x_o ≈ -0.034 (subcooled outlet),
+    q_CHF ≈ 5.6 MW/m².  Applying 10 MW/m² guarantees exceedance at the first
+    boiling cell.
+
+    (The former conditions L=100mm / T_in=440 K reached the outlet saturation
+    boundary at CHF, x_o ≈ +0.002, which Option 4 now correctly reclassifies as
+    a saturated-regime handoff rather than a subcooled burnout — see
+    test_chf_saturated_handoff_flags_not_raises.)
     """
-    geo = _round_tube(D=0.003, L=0.100)
+    geo = _round_tube(D=0.003, L=0.050)
     with pytest.raises(CHFExceededError) as exc_info:
         solve_channel(
-            geo, G=5000.0, T_in=440.0, P_in=1_000_000.0,
+            geo, G=5000.0, T_in=420.0, P_in=1_000_000.0,
             q_flux=10_000_000.0, n_cells=5,
         )
     err = exc_info.value
     assert err.q_applied == 10_000_000.0
     assert err.q_chf > 0.0
     assert err.q_applied >= err.q_chf
+
+
+def test_chf_out_of_envelope_flags_not_raises():
+    """G below the Hall & Mudawar floor → cells flagged not-assessable, no raise.
+
+    G=200 kg/m²·s (< 300 floor).  A subcooled-boiling cell must carry
+    chf_assessable=False with an extrapolation reason, q_chf=None, and the
+    solve must NOT raise CHFExceededError (the correlation cannot answer here —
+    it is a genuine "not assessable", not a burnout).
+    """
+    geo = _round_tube(D=0.003, L=0.050)
+    result = solve_channel(
+        geo, G=200.0, T_in=447.0, P_in=1_000_000.0,
+        q_flux=1_500_000.0, n_cells=10,
+    )
+    subcooled = [c for c in result.cells if c.regime == Regime.SUBCOOLED_BOILING]
+    assert subcooled, "test needs at least one subcooled-boiling cell"
+    c = subcooled[0]
+    assert c.chf_assessable is False
+    assert c.q_chf is None
+    assert "extrapolation" in c.chf_reason
+    # wall temperature / HTC / quality still computed and finite
+    assert c.T_wall > c.T_bulk
+    assert c.h_eff > 0.0
+
+
+def test_chf_saturated_handoff_flags_not_raises():
+    """x_o ≥ 0 at CHF → cells flagged saturated-handoff, no raise.
+
+    The former burnout conditions (L=100mm, T_in=440 K) reach outlet saturation
+    at CHF (x_o ≈ +0.002).  Under Option 4 this routes to the saturated-regime
+    handoff — a DIFFERENT signal from out-of-envelope — and must not raise.
+    """
+    geo = _round_tube(D=0.003, L=0.100)
+    result = solve_channel(
+        geo, G=5000.0, T_in=440.0, P_in=1_000_000.0,
+        q_flux=10_000_000.0, n_cells=5,
+    )
+    boiling = [c for c in result.cells if c.regime != Regime.SINGLE_PHASE]
+    assert boiling
+    assert all(c.chf_assessable is False for c in boiling)
+    assert all(c.q_chf is None for c in boiling)
+    subcooled = [c for c in boiling if c.regime == Regime.SUBCOOLED_BOILING]
+    assert subcooled, "need a subcooled-boiling cell to exercise the handoff path"
+    assert "saturated" in subcooled[0].chf_reason
 
 
 # ---------------------------------------------------------------------------

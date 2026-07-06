@@ -17,7 +17,13 @@ from two_phase_cp.correlations.boiling import (
     thom_1965,
     thom_1965_flux,
 )
-from two_phase_cp.correlations.chf import hall_mudawar_2000
+from two_phase_cp.correlations.chf import (
+    EnvelopeViolation,
+    SubcooledCHFAssessment,
+    SubcooledCHFStatus,
+    hall_mudawar_2000,
+    hall_mudawar_2000_assess,
+)
 from two_phase_cp.correlations.onb import bergles_rohsenow_onb
 from two_phase_cp.correlations.single_phase import dittus_boelter, gnielinski, sieder_tate
 
@@ -31,6 +37,10 @@ __all__ = [
     "kandlikar_1990",
     "KANDLIKAR_F_FL",
     "hall_mudawar_2000",
+    "hall_mudawar_2000_assess",
+    "SubcooledCHFAssessment",
+    "SubcooledCHFStatus",
+    "EnvelopeViolation",
     "thom_1965",
     "thom_1965_flux",
     "jens_lottes_1951",
