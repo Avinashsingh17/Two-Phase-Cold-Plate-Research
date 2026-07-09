@@ -35,6 +35,7 @@ Consolidated list of all open `<!-- TODO -->` items and unresolved questions acr
 | 12 | [[Drummond2018_manifold_microchannel]] | HFE-7100 RPI closure source for Phase 2 optimization — **scoped, outcome (a) with significant caveats** | See detailed entry below |
 | 13 | [[Ozguc2024_topology_optimization]] | Should we optimize for a single operating point or across an envelope of heat loads? Two-phase TO designs are heat-load-dependent (unlike single-phase), so a design optimized at one Q_in may not be optimal at another. | Ozguc Part 1 Fig. 5 shows how designs change with Q_in. Relevant to Phase 5 objective function design: single-point optimization is simpler but may miss robustness; envelope optimization requires multi-point evaluation per candidate, increasing computational cost. |
 | 14 | [[CHF_correlations]] / model gap #1 | **Saturated-CHF correlation** needed for the regime where exit quality x_o ≥ 0. Currently flag-only; the Hall & Mudawar 2000 subcooled-CHF guard (commit 47d0b4f) now hands off to "saturated-CHF regime, correlation not implemented" when x_o crosses 0, rather than extrapolating. | Open (sharpened 2026-06-28) | Select and implement a saturated/dryout CHF correlation **after** verifying its stated validity envelope (D_h, G, P, x) against our design envelope — same discipline applied to Hall & Mudawar this session. See #14 Detail below. |
+| 15 | [[correlation_anatomy]] / numeric-robustness defect | **Kandlikar 1990 crashes (`TypeError`) at exit equilibrium quality x > 1.** The HTC correlation raises a negative base ((1−x) < 0) to a fractional power once x exceeds 1 (full evaporation), producing a complex value that `max(h_NBD, h_CBD)` cannot order. A code-level guard defect, distinct from the *physics* dryout items #10/#14 (which concern correlation selection at x_e > 0). | Open (logged 2026-07-09) | Add a dryout guard (flag/stop at x ≥ 1), same philosophy as the Hall & Mudawar CHF guard (commit 47d0b4f). See #15 Detail below. |
 
 ## #12 Detail: HFE-7100 RPI Closure Source (Resolved to Scoped Workstream)
 
@@ -122,3 +123,24 @@ The project's CFD validation pipeline uses water (Stage 2, Qu & Mudawar 2003) an
 ---
 
 _Last lint pass: 2026-05-24. Next pass recommended after the next ingest._
+
+## #15 Detail: Kandlikar x>1 Numeric Crash (Dryout Guard Needed)
+
+**What.** When the 1D model marches a channel past full evaporation (exit equilibrium quality x > 1), `kandlikar_1990` raises `TypeError: '>' not supported between instances of 'complex' and 'complex'` at the `max(h_NBD, h_CBD)` return. Root cause: the convection number Co = (ρ_g/ρ_f)^0.5 · ((1−x)/x)^0.8 and the (1−x)^0.8 factor raise a negative base (1−x < 0) to a fractional power, yielding a complex number that cannot be ordered by `max()`.
+
+**Evidence.** Surfaced during the gap #2 diagnostic sweep (2026-07-09): at P = 1.17 bar, G = 135 kg/m²·s, T_in = 95 °C, the crash appeared for q″ ≥ 80 W/cm², coinciding exactly with independently-computed exit x_eq crossing 1.0 (x_eq = 1.17, 1.47, 2.06, 2.96 at q″ = 80, 100, 140, 200 W/cm² respectively). The independent energy-balance x_eq computation localized the crash to the x > 1 boundary, not to any correlation-internal error.
+
+**Scope and non-binding status.** Gap-independent — does not affect the gap #1 CHF guard or the gap #2 FDB default flip. Does not bind Stage 2 validation: the Qu & Mudawar 2003 envelope terminates at x_e ≈ 0.2, nowhere near x = 1, so the benchmark comparison never reaches this path. Logged for a dedicated fix rather than blocking Phase 2 closure.
+
+**Relation to #10 / #14.** Distinct from those items. #10 and #14 concern *which physics/correlation* governs the saturated/dryout region (dryout incipience quality x_di per Kim & Mudawar 2013 Part I; saturated-CHF handoff). #15 is a *numeric robustness* defect in existing code — it crashes before any physics question is reached. Fixing #15 (guard the boundary) is independent of resolving #10/#14 (choose the post-dryout correlation).
+
+**Resolution direction.** Same philosophy as the Hall & Mudawar CHF guard (commit 47d0b4f): detect the dryout boundary (x → 1) and flag the cell as post-dryout / unassessable — or stop the march — rather than marching past it into an undefined regime and producing a complex number. A post-dryout / mist-flow correlation, if later needed, follows the same sourcing discipline: verify the validity envelope before adopting. Physically x > 1 means the channel has fully evaporated, beyond anything the current saturated-boiling model represents.
+
+**Nomenclature (terms specific to this entry; general project terms are in the file's main nomenclature section).**
+- **Kandlikar 1990** — saturated flow-boiling HTC correlation (Kandlikar, *J. Heat Transfer* 112(1), 1990); `kandlikar_1990` in code.
+- **x (equilibrium quality)** — thermodynamic vapor mass fraction from energy balance; x < 0 subcooled, 0 ≤ x ≤ 1 two-phase, x > 1 superheated vapor (full evaporation).
+- **x_eq** — exit (channel-outlet) equilibrium quality.
+- **x_di** — dryout incipience quality (onset of annular-film dryout); the physics quantity in #10/#14, *not* the crash boundary here.
+- **Co** — convection number, (ρ_g/ρ_f)^0.5·((1−x)/x)^0.8.
+- **h_NBD / h_CBD** — nucleate-boiling-dominant / convective-boiling-dominant HTC branches; the model returns max(h_NBD, h_CBD).
+- **Dryout guard** — proposed boundary check flagging/stopping the march at x ≥ 1.
