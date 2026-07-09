@@ -42,7 +42,7 @@ from two_phase_cp.analytical._types import (
     CrossSection,
     Regime,
 )
-from two_phase_cp.correlations.boiling import kandlikar_1990
+from two_phase_cp.correlations.boiling import jens_lottes_1951_flux, kandlikar_1990
 from two_phase_cp.correlations.chf import (
     REASON_SATURATED_HANDOFF,
     SubcooledCHFStatus,
@@ -59,13 +59,26 @@ from two_phase_cp.properties.water import (
     water_properties_at_pressure,
 )
 
-# BR incipience: used for ONB detection (_find_onb_wall_temp).
-# FDB asymptote in the partial boiling interpolation is now selectable via
-# the fdb_correlation kwarg on solve_channel.  Default (None) falls back to
-# the BR incipience curve as the FDB stand-in (legacy behavior).
+# BR incipience: used for ONB detection (_find_onb_wall_temp).  This path is
+# unaffected by the FDB-asymptote default below — ONB detection always uses BR.
 _br_onb_curve = bergles_rohsenow_onb
 # Legacy alias — test_analytical.py imports this for expected-value calculations.
 bergles_rohsenow_curve = _br_onb_curve
+
+
+def _jens_lottes_fdb(P_bar: float, delta_T_sat: float) -> float:
+    """Default FDB nucleate-boiling asymptote: Jens & Lottes (1951), flux form.
+
+    Model-internal (P_bar, delta_T_sat) → q″ signature; adapts
+    jens_lottes_1951_flux, whose signature is (delta_T_sat, P_sat_Pa).
+    """
+    return jens_lottes_1951_flux(delta_T_sat, P_bar * 1e5)
+
+
+# FDB asymptote used by the partial-boiling interpolation when the caller does
+# NOT pass fdb_correlation.  Default is Jens & Lottes (1951); the BR incipience
+# curve remains available by passing it back explicitly via fdb_correlation.
+_DEFAULT_FDB_CURVE = _jens_lottes_fdb
 
 
 # ---------------------------------------------------------------------------
@@ -181,8 +194,9 @@ def solve_channel(
     fdb_correlation : callable(delta_T_sat, P_sat_Pa) → q [W/m²], optional
         FDB boiling curve for the nucleate boiling asymptote in the
         partial boiling interpolation.  Signature: (delta_T_sat [K],
-        P_sat [Pa]) → q″ [W/m²].  Default (None) falls back to BR
-        incipience curve as a stand-in.
+        P_sat [Pa]) → q″ [W/m²].  Default (None) uses Jens & Lottes (1951)
+        (flux form).  Pass the BR incipience curve explicitly to restore the
+        former stand-in.  ONB detection is unaffected and always uses BR.
 
     Returns
     -------
@@ -228,12 +242,13 @@ def solve_channel(
     )
 
     # FDB curve for partial boiling interpolation.
-    # Adapt fdb_correlation(delta_T_sat, P_Pa) to internal (P_bar, dT) signature.
+    # Adapt fdb_correlation(delta_T_sat, P_Pa) to internal (P_bar, dT) signature;
+    # default to Jens & Lottes (1951) when the caller passes nothing.
     if fdb_correlation is not None:
         def _fdb_curve(P_bar: float, delta_T_sat: float) -> float:
             return fdb_correlation(delta_T_sat, P_bar * 1e5)
     else:
-        _fdb_curve = None  # _solve_partial_boiling defaults to BR stand-in
+        _fdb_curve = _DEFAULT_FDB_CURVE  # Jens & Lottes (1951) default asymptote
 
     # Forward march
     h_march = h_in

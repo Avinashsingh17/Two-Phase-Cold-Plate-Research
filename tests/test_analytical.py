@@ -28,6 +28,7 @@ from two_phase_cp.analytical.model import (
     _solve_partial_boiling,
     bergles_rohsenow_curve,
 )
+from two_phase_cp.correlations import jens_lottes_1951_flux
 from two_phase_cp.correlations.single_phase import gnielinski, qu_mudawar_nu3
 from two_phase_cp.properties.water import liquid_state_at_Ph
 
@@ -391,6 +392,85 @@ def test_partial_boiling_approaches_boiling_curve_at_high_superheat():
         f"At high q, boiling should dominate: "
         f"BR fraction = {boiling_fraction:.3f}"
     )
+
+
+def test_fdb_default_is_jens_lottes():
+    """The default FDB nucleate-boiling asymptote is Jens-Lottes, not the BR stand-in.
+
+    Two layers:
+      (A) Direct _solve_partial_boiling drive: the Jens-Lottes adapter reaches the
+          Jens-Lottes wall superheat; the BR stand-in lands well below it and is
+          distinguishable (they do NOT collapse to the same value).
+      (B) solve_channel WITHOUT fdb_correlation must reproduce the explicit
+          Jens-Lottes run, NOT the explicit BR run — this is the actual
+          default-flip check.  (Pre-flip, the no-kwarg default equals BR and this
+          fails.)
+
+    The ONB-detection path is unaffected: q_onb is still the FDB curve evaluated
+    at the ONB superheat (mirroring the model's _fdb_at_onb per branch).
+    """
+    # --- (A) direct partial-boiling drive ---------------------------------
+    P_bar = 1.17
+    T_sat = 377.20
+    T_bulk = 373.0
+    h_sp = 20_000.0
+    q_applied = 8.0e6  # 8 MW/m^2 — deep enough that BR and JL are far apart
+
+    T_w_onb = _find_onb_wall_temp(P_bar, h_sp, T_bulk, T_sat)
+    dT_onb = T_w_onb - T_sat
+
+    def jl_curve(P_bar_arg, delta_T_sat):  # model-internal (P_bar, dT) -> q
+        return jens_lottes_1951_flux(delta_T_sat, P_bar_arg * 1e5)
+
+    # q_onb pedestal = each branch's own FDB curve at the ONB superheat.
+    q_onb_br = bergles_rohsenow_curve(P_bar, dT_onb)
+    q_onb_jl = jl_curve(P_bar, dT_onb)
+
+    T_w_br = _solve_partial_boiling(
+        q_applied, h_sp, T_bulk, T_sat, P_bar, q_onb_br, T_w_onb, fdb_curve=None
+    )
+    T_w_jl = _solve_partial_boiling(
+        q_applied, h_sp, T_bulk, T_sat, P_bar, q_onb_jl, T_w_onb, fdb_curve=jl_curve
+    )
+    dT_br = T_w_br - T_sat
+    dT_jl = T_w_jl - T_sat
+
+    # Jens-Lottes 1951, constants via Todreas & Kazimi p.538; integration/wiring
+    # target, not read from model.
+    dT_jl_target = 25.0 * (8.0) ** 0.25 * math.exp(-0.117 / 6.2)
+
+    assert dT_jl == pytest.approx(dT_jl_target, abs=0.5)  # JL run hits JL curve
+    assert abs(dT_br - dT_jl) > 5.0                       # not collapsed to equality
+    assert abs(dT_br - dT_jl_target) > 0.5                # BR is distinguishable
+
+    # --- (B) solve_channel default-flip check -----------------------------
+    # Point: D=3mm, L=20mm, G=2000, T_in=440K, P=10bar, q=2MW/m^2 keeps all 40
+    # cells subcooled-boiling (bulk stays below T_sat=453K; no saturated cells,
+    # so Kandlikar is never invoked) while BR and JL superheats sit ~18K apart —
+    # a clean, unambiguous discriminator.
+    geo = _round_tube(D=0.003, L=0.020)
+    kw = dict(G=2000.0, T_in=440.0, P_in=1_000_000.0, q_flux=2_000_000.0, n_cells=40)
+
+    def br_adapter(delta_T_sat, P_sat_Pa):  # fdb_correlation sig: (dT, P_Pa) -> q
+        return bergles_rohsenow_curve(P_sat_Pa * 1e-5, delta_T_sat)
+
+    r_def = solve_channel(geo, **kw)
+    r_jl = solve_channel(geo, **kw, fdb_correlation=jens_lottes_1951_flux)
+    r_br = solve_channel(geo, **kw, fdb_correlation=br_adapter)
+
+    sc = [i for i, c in enumerate(r_def.cells)
+          if c.regime == Regime.SUBCOOLED_BOILING]
+    assert sc, "need a subcooled-boiling cell for the default-flip check"
+    i = sc[len(sc) // 2]  # a mid-channel subcooled-boiling cell
+
+    T_def = r_def.cells[i].T_wall
+    T_jl = r_jl.cells[i].T_wall
+    T_br = r_br.cells[i].T_wall
+
+    # Default (no fdb_correlation) must equal the explicit Jens-Lottes run …
+    assert T_def == pytest.approx(T_jl, abs=1e-6)
+    # … and must be clearly distinct from the explicit BR run.
+    assert abs(T_def - T_br) > 5.0
 
 
 # ---------------------------------------------------------------------------
