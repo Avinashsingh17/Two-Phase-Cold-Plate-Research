@@ -19,4 +19,14 @@ results/
 
 # Raw PDFs are large — track via Git LFS or keep local-only
 # Uncomment the next line if raw/ should not be pushed:
-# raw/papers/*.pdf
+raw/papers/*.pdf
+
+# Claude Code local config
+.claude/
+
+# Session working notes (keep local)
+Session*.txt
+Task*.txt
+
+# Draft lit review — candid voice, curate before publishing
+literature_review.md
