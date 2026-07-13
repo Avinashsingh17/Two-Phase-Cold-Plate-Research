@@ -1,7 +1,7 @@
 ---
 title: "CFD Validation Plan (phase2_validation_plan)"
-last_updated: 2026-06-09
-status: skeleton — §2 envelope filled; §1 success criterion still EXTRACT
+last_updated: 2026-07-13
+status: "§1 success criterion RESOLVED (Option 2, code-to-code verification); pre-Fluent items 1/2/3/5 cleared; item 4 (D3 ingest) sole remaining blocker before Fluent."
 gates: no design exploration until both stages below pass and are documented in wiki/synthesis/validation_status.md
 ---
 
@@ -64,11 +64,49 @@ finding is that this parameter dominates the wall-temperature match and must be
 calibrated per pressure level. Treat it as the one legitimate calibration lever;
 everything else should fall out of the physics. (This is the same discipline as
 exposing correlation calibration coefficients as kwargs — calibrate openly
-against data, don't bury fitted constants.)
+against data, don't bury fitted constants.) Under the Option-2 criterion
+resolved below, Stage 1 pins N_ref to K&R's values rather than calibrating it;
+the calibration-lever discipline here applies at the first untuned downstream
+condition (Stage 2 or design).
 
-**Success criterion:** EXTRACT from paper — match wall-superheat curve and
-void-fraction profile within the experimental uncertainty Krepper & Rzehak
-themselves quote. State the number here once read.
+**Success criterion (RESOLVED — Option 2, code-to-code verification).**
+Category-1 extraction returned NONE STATED — K&R assign no experimental
+uncertainty to any DEBORA quantity. Any experimental ± lives in the primary
+sources (Garnier, Manon & Cubizolles 2001, Multiphase Sci. Tech. 13:1–111;
+Manon 2000, PhD thesis, Ecole Centrale Paris). We do not chase them: Stage 1 is
+a verification shakedown; Stage 2 carries the load-bearing
+validation-against-experiment claim.
+
+Stage 1 gates on code-to-code verification against K&R's own CFD curves, N_ref
+pinned to their published values — 3.0×10⁷ m⁻² at 2.62 MPa (DEBORA 1), 5.0×10⁶
+m⁻² at 1.46 MPa (DEBORA 4). Pinning means Stage 1 does not calibrate N_ref; the
+calibration lever defers to the first untuned condition (Stage 2 or design).
+Calibrating where K&R supply the value would be self-consistency dressed as a
+test. Both cases run, to test whether N_ref pressure-scaling survives CFX→Fluent
+translation.
+
+**Targets** (all figure-only; paper tabulates no profile data):
+
+* **Axial wall-superheat** — Fig. 4a/4b, gated vs the pinned-N_ref model curve
+  (not the sparse × points), ±3 K pointwise. Fig. 4 is superheat vs axial
+  position at fixed q″ (~74/~76 kW·m⁻²), not vs heat flux — the "superheat vs
+  heat flux" target does not exist and is dropped.
+* **Radial void at outlet** — Fig. 5a/7a, vs K&R's CFD curve, shape-only: peak
+  location ±0.1 R; area-averaged void ±15%; pipe-core absolute reported, not
+  gated (core governed by lift/dispersion/bubble-size closures least certain to
+  correspond CFX↔Fluent — expected translation divergence, non-diagnostic of
+  build correctness; peak + average are the closure-robust features). "Axial
+  void profile" is dropped: DEBORA void is radial-at-outlet only; panel-(e)
+  axial traces are simulation with ~3 exp points; a true axial void(z) curve
+  belongs to Bartolomej & Chanturiya, not DEBORA.
+
+All tolerances provisional pending D3 (item 4) — D3 sets whether a residual
+few-K / near-0.1-R offset is expected translation (widen) or build error
+(hold). Lock after D3, before the Fluent run.
+
+**Not gated (eyeball):** Fig. 9 (DEBORA 3–7, 1.46 MPa) wall-peak→core-peak
+migration — no pinned N_ref for 3/5/6/7; a wall-adjacent DEBORA-4 peak
+consistent with Fig. 9's low-T_in cases is a free confidence check.
 
 **Gates:** RPI model setup. No move to Stage 2 until this passes and is logged
 in validation_status.md.
@@ -171,23 +209,28 @@ benchmark exercises.
 
 ## 4. Open items to resolve before touching Fluent
 
-1. **EXTRACT** remaining operating-envelope numbers: §1 success criterion
-   (experimental uncertainty). §2 envelope now fully filled (G, T_in, P_out,
-   q″_eff, x_e, h_tp, channel depth, heat-flux basis); DEBORA geometry
-   now filled.
+1. ~~**EXTRACT** remaining operating-envelope numbers: §1 success criterion
+   (experimental uncertainty).~~ **RESOLVED** — §1 success criterion resolved
+   via Option 2 (code-to-code verification); Category-1 extraction found K&R
+   quote no experimental uncertainty (NONE STATED), so there is no number to
+   state. §2 envelope fully filled (G, T_in, P_out, q″_eff, x_e, h_tp, channel
+   depth, heat-flux basis); DEBORA geometry filled.
 2. ~~**Resolve** the DEBORA tube/annulus CONFLICT (§1).~~ **RESOLVED** —
    vertical tube, ID 19.2 mm. CLAUDE.md corrected in this commit.
-3. **ANSYS license check** — confirm Fluent multiphase + RPI wall-boiling are
-   in the OU academic license before committing to the E-E path.
-   PROJECT_CONTEXT flags this as unconfirmed. If unavailable, the
-   empirical-HTC-via-UDF fallback (the ITER-APDL approach) is the
-   contingency — which is partly why C3/D3 stay on the reading list.
+3. ~~**ANSYS license check** — confirm Fluent multiphase + RPI wall-boiling are
+   in the OU academic license before committing to the E-E path.~~ **RESOLVED**
+   — ANSYS 2025 R1, Eulerian multiphase + RPI Boiling Model confirmed
+   present/selectable in the OU academic license. (Had it been unavailable, the
+   empirical-HTC-via-UDF fallback — the ITER-APDL approach — was the
+   contingency; C3/D3 stay on the reading list regardless.)
 4. **Ingest D3** (IMECE 2024, VOF-vs-RPI in Fluent) — gated to this plan per
    literature_review.md's own note ("required reading before we commit to the
    high-fidelity model"). This is the next genuine paper pull.
-5. **Confirm** what data in each paper is actually digitizable (published curves
-   vs. tabulated points) — determines whether validation is point-wise or
-   trend-wise.
+5. ~~**Confirm** what data in each paper is actually digitizable (published
+   curves vs. tabulated points) — determines whether validation is point-wise
+   or trend-wise.~~ **RESOLVED** — all DEBORA profile data are figure-only; the
+   paper tabulates no profiles (Table 1 is system parameters only). All Stage-1
+   gates are therefore digitize-off-plot.
 
 ---
 
@@ -195,7 +238,7 @@ benchmark exercises.
 
 | Stage | Benchmark | Reproduce | Gates | Status |
 |-------|-----------|-----------|-------|--------|
-| 1 | Krepper & Rzehak 2011 (DEBORA) | wall-superheat vs q″; void profile | RPI model setup | not started |
+| 1 | Krepper & Rzehak 2011 (DEBORA) | axial wall-superheat (Fig. 4, pinned-N_ref curve, ±3 K); radial void at outlet (Fig. 5a/7a, shape-only) | RPI model setup | not started |
 | 2 | Qu & Mudawar 2003 | Nu, Δp vs Re; two-phase map | design exploration | not started |
 
 **No design exploration until both gates pass and are documented in
