@@ -5,6 +5,81 @@ status: "§1 success criterion RESOLVED (Option 2, code-to-code verification); p
 gates: no design exploration until both stages below pass and are documented in wiki/synthesis/validation_status.md
 ---
 
+# Nomenclature
+
+This document is self-contained: every symbol, abbreviation, and named
+correlation used below is defined here. Terms are listed once even where they
+recur across sections.
+
+## Benchmarks, experiments & solvers
+
+| Term | Meaning |
+|------|---------|
+| DEBORA | French R-12 subcooled flow-boiling experimental campaign; vertical heated tube; cases 1–7 vary pressure and inlet temperature. Stage 1 reference data. |
+| DEBORA 1 | 2.62 MPa case; pinned N_ref = 3.0×10⁷ m⁻² |
+| DEBORA 4 | 1.46 MPa case; pinned N_ref = 5.0×10⁶ m⁻² |
+| Krepper & Rzehak 2011 (K&R) | CFD paper simulating DEBORA with Eulerian-Eulerian + RPI in CFX; the Stage 1 benchmark |
+| Qu & Mudawar 2003 | Saturated-water microchannel heat-sink experiment; the Stage 2 benchmark |
+| Bartolomej & Chanturiya 1967 | High-pressure water boiling data providing an axial void profile; the source of any axial void(z) curve — not DEBORA |
+| Garnier, Manon & Cubizolles 2001; Manon 2000 | Primary DEBORA experimental sources (where experimental uncertainty would live, if ever needed) |
+| CFX | ANSYS solver used by K&R |
+| Fluent | ANSYS solver used in this project |
+| D3 | IMECE 2024 paper comparing VOF vs. RPI in Fluent (pending ingest; sole open pre-Fluent blocker) |
+
+## Models & methods
+
+| Term | Meaning |
+|------|---------|
+| CFD | Computational fluid dynamics |
+| Eulerian-Eulerian (E-E) | Two-fluid multiphase model treating liquid and vapor as interpenetrating continua |
+| RPI | Rensselaer Polytechnic Institute wall-boiling model; partitions wall heat flux into evaporative, single-phase-convective, and quenching components |
+| VOF | Volume of Fluid multiphase model |
+| Option 2 | The chosen Stage 1 gate: code-to-code verification against K&R's own CFD curves, rather than validation against the DEBORA experiment |
+
+## Named correlations
+
+| Term | Meaning |
+|------|---------|
+| BR (Bergles-Rohsenow) | Boiling-incipience (ONB) correlation; currently stands in for the FDB asymptote in the 1D model |
+| Katto-Ohno | Saturated critical-heat-flux correlation (flag-only for Stage 2) |
+
+## Symbols
+
+| Symbol | Meaning | Units |
+|--------|---------|-------|
+| N | Nucleation site density | m⁻² |
+| N_ref | Nucleation site density reference value (the pinned calibration parameter) | m⁻² |
+| G | Mass flux | kg·m⁻²·s⁻¹ |
+| q″ | Heat flux (generic) | W·cm⁻² or kW·m⁻² |
+| q″_eff | Effective (device-basis) heat flux = P_W / A_t | W·cm⁻² |
+| q″_ch | Channel-perimeter-basis heat flux | W·cm⁻² |
+| P_W | Wall heating power | W |
+| A_t | Top planform area | cm² |
+| T_in | Inlet temperature | °C |
+| T_sat | Saturation temperature | °C |
+| ΔT_sat (= T_W − T_sat) | Wall superheat | K |
+| P_out | Outlet pressure | bar |
+| x_e | Exit (thermodynamic-equilibrium) quality | — |
+| h_tp | Two-phase heat transfer coefficient | kW·m⁻²·K⁻¹ |
+| α_G | Gas volume fraction (void fraction) | — |
+| R | Pipe radius (appears as the tolerance unit in ±0.1 R) | m |
+| ID | Tube inner diameter | mm |
+| L_h | Heated length | m |
+| Nu | Nusselt number | — |
+| Re | Reynolds number | — |
+| Δp | Pressure drop | — |
+
+## Regimes & other abbreviations
+
+| Term | Meaning |
+|------|---------|
+| ONB | Onset of nucleate boiling |
+| FDB | Fully developed boiling |
+| CHF | Critical heat flux |
+| HTC | Heat transfer coefficient |
+
+---
+
 # CFD Validation Plan
 
 Filename retained per PROJECT_CONTEXT Task 6. Despite the "phase2" name, this
