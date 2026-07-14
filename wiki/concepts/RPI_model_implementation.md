@@ -36,10 +36,19 @@ _Status: sparse — to be populated during Phase 3 when Fluent is opened._
 
 - ANSYS Fluent Theory Guide: Multiphase → Eulerian Model → Wall Boiling
 - ANSYS Fluent User's Guide: Setting Up Multiphase → Wall Boiling Model
-- IMECE 2024 ANSYS Fluent paper (pending ingest — may contain Fluent-specific guidance)
+- IMECE 2024 ANSYS Fluent paper — **ingested 2026-07-14; NOT an RPI source.**
+  [[Viyyuri2024_fluent_microchannel_boiling]] turned out to use VOF and a
+  semi-mechanistic boiling (SMB) model under the *mixture* multiphase framework —
+  it contains **no** RPI heat-flux-partitioning / Euler-Euler content and does
+  **not** populate this checklist. The CFX↔Fluent RPI correspondence therefore
+  remains unsourced and must come from the Fluent Theory Guide RPI chapter + the
+  GUI Boiling-tab default inventory checked against Krepper & Rzehak's reported
+  closures (re-scoped validation-plan item 4). See [[open_questions]] #16. The D3
+  page is retained for precedent / model-form value only (industry-source rule).
 - Our own Phase 3 experience
 
 ## Cross-References
 
 - [[RPI_wall_boiling_model]]
 - [[KrepperRzehak2011_DEBORA]]
+- [[Viyyuri2024_fluent_microchannel_boiling]] (precedent, **not** an RPI source)

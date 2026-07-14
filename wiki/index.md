@@ -12,6 +12,7 @@ title: Wiki Index
 - [[KimMudawar2013_universal_boiling_II]] — Universal HTC correlation for mini/micro-channels (10,805 pts, 18 fluids, MAE 20.3%); still misses h_tp trend for water microchannels  [1 source]
 - [[Drummond2018_manifold_microchannel]] — Hierarchical manifold MMC array, HFE-7100, 910 W/cm^2; baseline design target for optimization phase  [1 source]
 - [[Ozguc2024_topology_optimization]] — First TO framework for two-phase flow boiling (Parts 1+2); homogenization + mixture model, 14-coeff calibration, Pareto-validated DMLS designs; north star for optimization methodology  [2 sources]
+- [[Viyyuri2024_fluent_microchannel_boiling]] — ANSYS Fluent microchannel flow boiling, two paths (transient VOF vs steady semi-mechanistic boiling on mixture); ~60× runtime contrast; vendor-authored precedent / model-form only, NOT an RPI source  [1 source]
 
 ## Concepts
 
@@ -20,6 +21,7 @@ title: Wiki Index
 - [[RPI_model_implementation]] — CFX-vs-Fluent translation checklist; UDF requirements, risk items  [1 source]
 - [[two_phase_fundamentals]] — Boiling curve, flow regimes, ONB/CHF transitions, dimensionless groups; foundational reference for all downstream work  [6 sources]
 - [[correlation_anatomy]] — Anatomy of HT correlations: dimensionless groups, superposition assembly, envelope + role-dependent failure modes  [2 sources]
+- [[semi_mechanistic_boiling_model]] — Semi-mechanistic boiling (SMB) under the mixture multiphase framework; empirical HTC-superposition wall closure, contrasted with RPI/Euler-Euler  [1 source]
 
 ## Entities
 

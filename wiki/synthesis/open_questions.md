@@ -1,7 +1,7 @@
 ---
 title: "Open Questions — Consolidated TODO Tracker"
 type: synthesis
-last_updated: 2026-06-28
+last_updated: 2026-07-14
 tags: [meta, open-questions, TODO, lint]
 ---
 
@@ -36,6 +36,7 @@ Consolidated list of all open `<!-- TODO -->` items and unresolved questions acr
 | 13 | [[Ozguc2024_topology_optimization]] | Should we optimize for a single operating point or across an envelope of heat loads? Two-phase TO designs are heat-load-dependent (unlike single-phase), so a design optimized at one Q_in may not be optimal at another. | Ozguc Part 1 Fig. 5 shows how designs change with Q_in. Relevant to Phase 5 objective function design: single-point optimization is simpler but may miss robustness; envelope optimization requires multi-point evaluation per candidate, increasing computational cost. |
 | 14 | [[CHF_correlations]] / model gap #1 | **Saturated-CHF correlation** needed for the regime where exit quality x_o ≥ 0. Currently flag-only; the Hall & Mudawar 2000 subcooled-CHF guard (commit 47d0b4f) now hands off to "saturated-CHF regime, correlation not implemented" when x_o crosses 0, rather than extrapolating. | Open (sharpened 2026-06-28) | Select and implement a saturated/dryout CHF correlation **after** verifying its stated validity envelope (D_h, G, P, x) against our design envelope — same discipline applied to Hall & Mudawar this session. See #14 Detail below. |
 | 15 | [[correlation_anatomy]] / numeric-robustness defect | **Kandlikar 1990 crashes (`TypeError`) at exit equilibrium quality x > 1.** The HTC correlation raises a negative base ((1−x) < 0) to a fractional power once x exceeds 1 (full evaporation), producing a complex value that `max(h_NBD, h_CBD)` cannot order. A code-level guard defect, distinct from the *physics* dryout items #10/#14 (which concern correlation selection at x_e > 0). | Open (logged 2026-07-09) | Add a dryout guard (flag/stop at x ≥ 1), same philosophy as the Hall & Mudawar CHF guard (commit 47d0b4f). See #15 Detail below. |
+| 16 | [[RPI_model_implementation]] / [[Viyyuri2024_fluent_microchannel_boiling]] | **CFX↔Fluent RPI wall-boiling correspondence check is open.** D3 (IMECE 2024) was gated as the source that would confirm it but does not — it contains no RPI/Eulerian content (uses VOF + semi-mechanistic boiling under the *mixture* framework). Status change logged: item 4 not closed by D3. | Open (logged 2026-07-14) | Source the correspondence from the Fluent Theory Guide RPI chapter + GUI Boiling-tab default inventory vs. Krepper & Rzehak's reported closures (re-scoped validation-plan item 4). |
 
 ## #12 Detail: HFE-7100 RPI Closure Source (Resolved to Scoped Workstream)
 
