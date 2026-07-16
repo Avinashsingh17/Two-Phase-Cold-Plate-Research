@@ -1,7 +1,7 @@
 ---
 title: "CFD Validation Plan (phase2_validation_plan)"
-last_updated: 2026-07-13
-status: "§1 success criterion RESOLVED (Option 2, code-to-code verification); pre-Fluent items 1/2/3/5 cleared; item 4 (D3 ingest) sole remaining blocker before Fluent."
+last_updated: 2026-07-16
+status: "§1 success criterion RESOLVED (Option 2, code-to-code verification); pre-Fluent items 1/2/3/5 cleared; item 4 re-scoped — D3 ingested (0a1a987) but contains no RPI content and did not close the CFX↔Fluent RPI correspondence gate; remaining light pre-Fluent deliverable: RPI correspondence check (Fluent Theory Guide + GUI inventory) and extraction of K&R's NSD + bubble-departure-diameter coefficients for a DEFINE_BOILING_PROPERTY UDF."
 gates: no design exploration until both stages below pass and are documented in wiki/synthesis/validation_status.md
 ---
 
@@ -24,7 +24,7 @@ recur across sections.
 | Garnier, Manon & Cubizolles 2001; Manon 2000 | Primary DEBORA experimental sources (where experimental uncertainty would live, if ever needed) |
 | CFX | ANSYS solver used by K&R |
 | Fluent | ANSYS solver used in this project |
-| D3 | IMECE 2024 paper comparing VOF vs. RPI in Fluent (pending ingest; sole open pre-Fluent blocker) |
+| D3 | IMECE2024-146631 (Viyyuri/ANSYS): VOF vs. SMB-on-mixture in Fluent. Ingested (commit 0a1a987); contains no RPI/Eulerian content and did not close the CFX↔Fluent RPI correspondence gate (see item 4, open_questions.md #16) |
 
 ## Models & methods
 
@@ -34,6 +34,8 @@ recur across sections.
 | Eulerian-Eulerian (E-E) | Two-fluid multiphase model treating liquid and vapor as interpenetrating continua |
 | RPI | Rensselaer Polytechnic Institute wall-boiling model; partitions wall heat flux into evaporative, single-phase-convective, and quenching components |
 | VOF | Volume of Fluid multiphase model |
+| SMB | Semi-mechanistic boiling model applied on the mixture model (the approach D3 actually compares against VOF) |
+| UDF | User-defined function (Fluent C hook); DEFINE_BOILING_PROPERTY is the UDF macro required to impose K&R's recalibrated NSD and bubble-departure-diameter coefficients |
 | Option 2 | The chosen Stage 1 gate: code-to-code verification against K&R's own CFD curves, rather than validation against the DEBORA experiment |
 
 ## Named correlations
@@ -132,7 +134,9 @@ set, which is the point of Stage 1.
 
 **EXTRACT:** confirm RPI sub-model correspondence between CFX and Fluent
 (wall-partitioning, bubble departure diameter, nucleation site density model) —
-this is where D3 (IMECE 2024, VOF-vs-RPI in Fluent) becomes required reading.
+via the Fluent Theory Guide RPI/Wall Boiling Models chapter plus a GUI
+Boiling-tab inventory against K&R's closure set. (D3 was expected to document
+this correspondence; it does not — it contains no RPI content. See item 4.)
 
 **Key tuning knob:** nucleation site density. Krepper & Rzehak's central
 finding is that this parameter dominates the wall-temperature match and must be
@@ -175,9 +179,11 @@ translation.
   axial traces are simulation with ~3 exp points; a true axial void(z) curve
   belongs to Bartolomej & Chanturiya, not DEBORA.
 
-All tolerances provisional pending D3 (item 4) — D3 sets whether a residual
-few-K / near-0.1-R offset is expected translation (widen) or build error
-(hold). Lock after D3, before the Fluent run.
+All tolerances provisional pending the item-4 correspondence check (Fluent
+Theory Guide RPI chapter + GUI Boiling-tab inventory vs. K&R's closures) —
+that check sets whether a residual few-K / near-0.1-R offset is expected
+translation (widen) or build error (hold). Lock after the correspondence
+check, before the Fluent run.
 
 **Not gated (eyeball):** Fig. 9 (DEBORA 3–7, 1.46 MPa) wall-peak→core-peak
 migration — no pinned N_ref for 3/5/6/7; a wall-adjacent DEBORA-4 peak
@@ -298,9 +304,21 @@ benchmark exercises.
    present/selectable in the OU academic license. (Had it been unavailable, the
    empirical-HTC-via-UDF fallback — the ITER-APDL approach — was the
    contingency; C3/D3 stay on the reading list regardless.)
-4. **Ingest D3** (IMECE 2024, VOF-vs-RPI in Fluent) — gated to this plan per
-   literature_review.md's own note ("required reading before we commit to the
-   high-fidelity model"). This is the next genuine paper pull.
+4. **RPI correspondence check + K&R coefficient extraction** (re-scoped
+   2026-07-16). ~~Ingest D3~~ **DONE** — D3 (IMECE2024-146631) ingested at
+   commit 0a1a987, but it is VOF vs. SMB-on-mixture, not VOF-vs-RPI, and
+   contains no RPI/Eulerian content; it does not close the CFX↔Fluent RPI
+   correspondence gate (open_questions.md #16). Remaining light pre-Fluent
+   deliverable: (a) establish CFX↔Fluent RPI correspondence from the Fluent
+   Theory Guide Wall Boiling Models chapter plus a GUI Boiling-tab inventory
+   vs. K&R's closures; (b) extract K&R's actual nucleation-site-density and
+   bubble-departure-diameter coefficient values/forms from the paper. K&R
+   used the Lemmert-Chawla NSD form but recalibrated its coefficients per
+   pressure; Fluent's GUI offers only default-coefficient Lemmert-Chawla or
+   User-Defined, so imposing K&R's coefficients requires a
+   DEFINE_BOILING_PROPERTY UDF (GUI-confirm at setup that coefficients are
+   not editable fields). Implementability is confirmed (yes, via UDF) — this
+   is no longer a blocker, just needs K&R's numbers before the build.
 5. ~~**Confirm** what data in each paper is actually digitizable (published
    curves vs. tabulated points) — determines whether validation is point-wise
    or trend-wise.~~ **RESOLVED** — all DEBORA profile data are figure-only; the
